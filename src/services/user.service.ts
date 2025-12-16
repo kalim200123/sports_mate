@@ -13,6 +13,15 @@ export class UserService {
   }
 
   /**
+   * ID로 유저 조회
+   */
+  static async findById(id: number): Promise<User | null> {
+    const query = `SELECT * FROM users WHERE id = ? AND deleted_at IS NULL`;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [id]);
+    return (rows[0] as User) || null;
+  }
+
+  /**
    * Mock 닉네임으로 유저 조회 또는 생성 (개발 및 테스트용)
    * - 존재하면 반환
    * - 없으면 자동 생성 후 반환 (성별, 연령대 필수)
@@ -30,13 +39,24 @@ export class UserService {
     // JSON.stringify needs to be handled if mysql2 doesn't auto-convert array to json string for JSON columns.
     const cheeringStylesJson = JSON.stringify([]);
 
+    // Avatar assignment (F: 1-3, M: 4-6)
+    const avatarOffset = gender === "FEMALE" ? 1 : 4;
+    const avatarId = Math.floor(Math.random() * 3) + avatarOffset;
+
     // DB INSERT
     const insertQuery = `
-      INSERT INTO users (kakao_id, nickname, gender, age_group, cheering_styles, mbti)
-      VALUES (?, ?, ?, ?, ?, NULL)
+      INSERT INTO users (kakao_id, nickname, gender, age_group, cheering_styles, mbti, avatar_id)
+      VALUES (?, ?, ?, ?, ?, NULL, ?)
     `;
 
-    await pool.query<ResultSetHeader>(insertQuery, [mockKakaoId, nickname, gender, ageGroup, cheeringStylesJson]);
+    await pool.query<ResultSetHeader>(insertQuery, [
+      mockKakaoId,
+      nickname,
+      gender,
+      ageGroup,
+      cheeringStylesJson,
+      avatarId,
+    ]);
 
     // 3. 생성된 유저 다시 조회해서 반환
     const created = await this.findByKakaoId(mockKakaoId);

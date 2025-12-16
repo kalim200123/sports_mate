@@ -1,7 +1,47 @@
 import { RoomService } from "@/services/room.service";
 import { NextResponse } from "next/server";
 
-// GET /api/rooms
+/**
+ * @swagger
+ * /api/rooms:
+ *   get:
+ *     summary: List matching rooms
+ *     tags:
+ *       - Rooms
+ *     parameters:
+ *       - in: query
+ *         name: match_id
+ *         schema:
+ *           type: integer
+ *         description: Filter by match ID
+ *     responses:
+ *       200:
+ *         description: List of rooms
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       title:
+ *                         type: string
+ *                       location:
+ *                         type: string
+ *                       current_count:
+ *                         type: integer
+ *                       max_count:
+ *                         type: integer
+ *       500:
+ *         description: Server Error
+ */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -21,7 +61,51 @@ export async function GET(request: Request) {
   }
 }
 
-// POST /api/rooms (예시)
+/**
+ * @swagger
+ * /api/rooms:
+ *   post:
+ *     summary: Create a new room
+ *     tags:
+ *       - Rooms
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - match_id
+ *               - host_id
+ *               - title
+ *             properties:
+ *               match_id:
+ *                 type: integer
+ *               host_id:
+ *                 type: integer
+ *               title:
+ *                 type: string
+ *               content:
+ *                 type: string
+ *               location:
+ *                 type: string
+ *               max_count:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Room created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 roomId:
+ *                   type: integer
+ *       500:
+ *         description: Server Error
+ */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -31,7 +115,6 @@ export async function POST(request: Request) {
     // Call Service
     const roomId = await RoomService.createRoom({
       ...body,
-      is_approval_required: body.is_approval_required ?? true, // Default to true
       status: "OPEN",
     });
 

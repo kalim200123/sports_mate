@@ -1,9 +1,17 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+export function getAvatarUrl(avatarId: number): string {
+  // Default to 1 if invalid or null
+  const validId = avatarId && avatarId > 0 && avatarId <= 10 ? avatarId : 1;
+  return `/avatars/${validId}.png`;
+}
+
 
 export const getTeamColor = (teamName: string) => {
   if (teamName.includes("대한항공")) return "bg-[#0065b3]";

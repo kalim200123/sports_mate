@@ -29,6 +29,8 @@ export interface User {
   age_group: string;
   mbti?: string | null;
   cheering_styles: CheeringStyle[]; // JSON array
+  profile_image_url?: string | null;
+  avatar_id: number;
   status?: string;
   created_at: Date;
   updated_at: Date;
@@ -56,7 +58,6 @@ export interface Room {
   location: string | null;
   ticket_status: "RESERVED" | "NOT_RESERVED";
   max_count: number;
-  is_approval_required: boolean; // mapped from TINYINT
   status: RoomStatus;
   created_at: Date;
   updated_at: Date;

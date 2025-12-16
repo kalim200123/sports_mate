@@ -1,10 +1,11 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import CreateRoomModal from "./CreateRoomModal";
 
 export default function MatchingRoomList() {
+  const router = useRouter();
   const params = useParams();
   const matchId = Number(params.id);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -66,24 +67,36 @@ export default function MatchingRoomList() {
           rooms.map((room) => (
             <div
               key={room.id}
+              onClick={() => router.push(`/rooms/${room.id}`)}
               className="bg-white dark:bg-zinc-800 p-4 rounded-xl border border-zinc-100 dark:border-zinc-700 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
             >
               <div className="flex justify-between items-start mb-2">
                 <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-md">
-                  {room.is_approval_required ? "승인제" : "선착순"}
+                  승인제
                 </span>
-                <span className="text-xs text-zinc-400">1분 전</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                    room.ticket_status === "RESERVED"
+                      ? "border-blue-200 text-blue-600 bg-blue-50"
+                      : "border-zinc-200 text-zinc-500 bg-zinc-50"
+                  }`}
+                >
+                  {room.ticket_status === "RESERVED" ? "예매완료" : "미예매"}
+                </span>
               </div>
               <h3 className="font-bold text-zinc-900 dark:text-zinc-100 mb-1 line-clamp-1">{room.title}</h3>
               <p className="text-xs text-zinc-500 mb-3 line-clamp-1">{room.content}</p>
 
               <div className="flex items-center gap-2 text-xs text-zinc-500">
                 <span className="flex items-center gap-1">
-                  👤 <span className="font-medium text-zinc-700 dark:text-zinc-300">1/{room.max_count}</span>
+                  👤{" "}
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                    {room.current_count || 1}/{room.max_count}
+                  </span>
                 </span>
-                {room.seat_area && (
+                {room.location && (
                   <span className="bg-zinc-100 dark:bg-zinc-700 px-1.5 py-0.5 rounded text-[10px]">
-                    {room.seat_area} {room.seat_block}
+                    📍 {room.location}
                   </span>
                 )}
               </div>

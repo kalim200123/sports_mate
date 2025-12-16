@@ -1,6 +1,6 @@
-import { MatchService } from "@/services/match.service";
-import MatchHeader from "@/components/match/MatchHeader";
 import MatchDetailContent from "@/components/match/MatchDetailContent";
+import MatchHeader from "@/components/match/MatchHeader";
+import { MatchService } from "@/services/match.service";
 import { notFound } from "next/navigation";
 
 interface PageProps {
@@ -27,7 +27,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
       <MatchHeader match={match} />
 
       {/* 2. Content Area (Client Component for Mobile Tabs) */}
-      <MatchDetailContent />
+      <MatchDetailContent matchId={matchId} />
     </div>
   );
 }

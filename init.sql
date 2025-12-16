@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS users (
     age_group VARCHAR(20),
     mbti VARCHAR(10),
     cheering_styles JSON NOT NULL, -- Defaults to '[]' via Application or Trigger, schema says DEFAULT (JSON_ARRAY())
+    profile_image_url VARCHAR(2048),
+    avatar_id INT DEFAULT 1,
     status VARCHAR(20) DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -38,7 +40,6 @@ CREATE TABLE IF NOT EXISTS rooms (
     location VARCHAR(100),
     ticket_status ENUM('RESERVED', 'NOT_RESERVED') DEFAULT 'NOT_RESERVED',
     max_count INT NOT NULL DEFAULT 4,
-    is_approval_required TINYINT(1) DEFAULT 1,
     status ENUM('OPEN', 'FULL', 'CLOSED', 'DELETED') DEFAULT 'OPEN',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

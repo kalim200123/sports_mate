@@ -18,14 +18,12 @@ export default function CreateRoomModal({ isOpen, onClose, matchId }: CreateRoom
     location: string;
     ticket_status: "RESERVED" | "NOT_RESERVED";
     max_count: number;
-    is_approval_required: boolean;
   }>({
     title: "",
     content: "",
     location: "",
     ticket_status: "NOT_RESERVED",
     max_count: 4,
-    is_approval_required: true,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);

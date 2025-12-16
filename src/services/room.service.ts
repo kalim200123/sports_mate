@@ -9,10 +9,11 @@ export class RoomService {
    */
   static async getRooms(matchId?: number): Promise<Room[]> {
     let query = `
-      SELECT r.*, m.home_team, m.away_team
+      SELECT r.*, m.home_team, m.away_team,
+             (SELECT COUNT(*) FROM user_rooms ur WHERE ur.room_id = r.id AND ur.status = 'JOINED') as current_count
       FROM rooms r
       JOIN matches m ON r.match_id = m.id
-      WHERE r.deleted_at IS NULL
+      WHERE r.deleted_at IS NULL AND r.title != 'OFFICIAL_CHAT'
     `;
     const params: (string | number)[] = [];
 
@@ -59,5 +60,52 @@ export class RoomService {
     } finally {
       connection.release();
     }
+  }
+
+  /**
+   * 단일 방 상세 조회 (참여자 수 포함)
+   */
+  static async getRoomDetail(
+    roomId: number
+  ): Promise<(Room & { current_count: number; joined_users: { nickname: string; avatar_url: string }[] }) | null> {
+    const query = `
+      SELECT r.*,
+             (SELECT COUNT(*) FROM user_rooms ur WHERE ur.room_id = r.id AND ur.status = 'JOINED') as current_count
+      FROM rooms r
+      WHERE r.id = ? AND r.deleted_at IS NULL
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [roomId]);
+
+    if (!rows[0]) return null;
+
+    // Fetch joined users
+    const userQuery = `
+      SELECT u.nickname, u.avatar_id
+      FROM user_rooms ur
+      JOIN users u ON ur.user_id = u.id
+      WHERE ur.room_id = ? AND ur.status = 'JOINED'
+    `;
+    const [userRows] = await pool.query<RowDataPacket[]>(userQuery, [roomId]);
+
+    // Map avatar_id to url is needed, but for now just pass data.
+    // Wait, getAvatarUrl is in lib/utils or socket-server.
+    // We should probably rely on client to format or map it here if we have access to utils.
+    // Let's assume client handles avatar or we simple return nickname.
+    // Requirement is "Show nicknames".
+
+    return {
+      ...(rows[0] as Room),
+      current_count: rows[0].current_count,
+      joined_users: userRows.map((u) => ({ nickname: u.nickname, avatar_url: `/avatars/${u.avatar_id}.png` })), // Simple mapping
+    };
+  }
+  /**
+   * 사용자 승인 (status = 'JOINED')
+   */
+  static async approveUser(roomId: number, userId: number): Promise<void> {
+    await pool.query(
+      "UPDATE user_rooms SET status = 'JOINED', decided_at = NOW(), joined_at = NOW() WHERE user_id = ? AND room_id = ?",
+      [userId, roomId]
+    );
   }
 }
