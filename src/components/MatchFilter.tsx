@@ -27,6 +27,7 @@ export default function MatchFilter() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line
     setMounted(true);
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
