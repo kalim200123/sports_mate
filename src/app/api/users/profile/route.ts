@@ -7,9 +7,10 @@ import { NextResponse } from "next/server";
  * @swagger
  * /api/users/profile:
  *   put:
- *     summary: Update user profile
+ *     summary: 내 프로필 수정
+ *     description: 로그인된 사용자의 프로필 정보(닉네임, 성별, 응원 팀, 스타일 등)를 수정합니다.
  *     tags:
- *       - Users
+ *       - Users (사용자)
  *     requestBody:
  *       required: true
  *       content:
@@ -22,26 +23,43 @@ import { NextResponse } from "next/server";
  *             properties:
  *               nickname:
  *                 type: string
+ *                 description: 닉네임
  *               gender:
  *                 type: string
  *                 enum: [MALE, FEMALE]
+ *                 description: 성별
  *               age_group:
  *                 type: string
+ *                 description: 연령대 (예: 20s, 30s)
  *               my_team:
  *                 type: string
+ *                 description: 응원하는 팀 이름 (예: 서울 우리카드)
  *               cheering_styles:
  *                 type: array
  *                 items:
  *                   type: string
+ *                 description: 응원 스타일 목록 (최대 3개)
+ *               profile_image_url:
+ *                 type: string
+ *                 description: 업로드된 프로필 이미지 URL
+ *               title:
+ *                 type: string
+ *                 description: 사용자 칭호
+ *               win_rate:
+ *                 type: number
+ *                 description: 직관 승률
+ *               total_visit:
+ *                 type: number
+ *                 description: 직관 횟수
  *     responses:
  *       200:
- *         description: Profile updated successfully
+ *         description: 프로필 수정 성공
  *       400:
- *         description: Validation Error
+ *         description: 필수 입력값 누락 또는 유효성 검사 실패
  *       401:
- *         description: Unauthorized
+ *         description: 인증되지 않은 사용자 (로그인 필요)
  *       500:
- *         description: Server Error
+ *         description: 서버 내부 오류
  */
 
 // GET Handler

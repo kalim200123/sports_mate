@@ -5,18 +5,19 @@ import { NextResponse } from "next/server";
  * @swagger
  * /api/rooms:
  *   get:
- *     summary: List matching rooms
+ *     summary: 채팅방 목록 조회
+ *     description: 조건에 맞는 채팅방 목록을 조회합니다. (예: 특정 경기 ID로 필터링)
  *     tags:
- *       - Rooms
+ *       - Rooms (채팅방)
  *     parameters:
  *       - in: query
  *         name: match_id
  *         schema:
  *           type: integer
- *         description: Filter by match ID
+ *         description: 경기(Match) ID (선택 사항)
  *     responses:
  *       200:
- *         description: List of rooms
+ *         description: 채팅방 목록 조회 성공
  *         content:
  *           application/json:
  *             schema:
@@ -40,7 +41,7 @@ import { NextResponse } from "next/server";
  *                       max_count:
  *                         type: integer
  *       500:
- *         description: Server Error
+ *         description: 서버 내부 오류
  */
 export async function GET(request: Request) {
   try {
@@ -65,9 +66,10 @@ export async function GET(request: Request) {
  * @swagger
  * /api/rooms:
  *   post:
- *     summary: Create a new room
+ *     summary: 채팅방 생성
+ *     description: 새로운 응원 채팅방 또는 직관 모임방을 생성합니다.
  *     tags:
- *       - Rooms
+ *       - Rooms (채팅방)
  *     requestBody:
  *       required: true
  *       content:
@@ -81,19 +83,25 @@ export async function GET(request: Request) {
  *             properties:
  *               match_id:
  *                 type: integer
+ *                 description: 관련 경기 ID
  *               host_id:
  *                 type: integer
+ *                 description: 방장(생성자) 사용자 ID
  *               title:
  *                 type: string
+ *                 description: 방 제목
  *               content:
  *                 type: string
+ *                 description: 방 소개글 (선택)
  *               location:
  *                 type: string
+ *                 description: 모임 장소 (선택, 직관 모임 시)
  *               max_count:
  *                 type: integer
+ *                 description: 최대 참여 인원
  *     responses:
  *       201:
- *         description: Room created successfully
+ *         description: 채팅방 생성 성공
  *         content:
  *           application/json:
  *             schema:
@@ -104,7 +112,7 @@ export async function GET(request: Request) {
  *                 roomId:
  *                   type: integer
  *       500:
- *         description: Server Error
+ *         description: 서버 내부 오류
  */
 export async function POST(request: Request) {
   try {

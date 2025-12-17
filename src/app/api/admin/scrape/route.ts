@@ -5,24 +5,24 @@ import { NextResponse } from "next/server";
  * @swagger
  * /api/admin/scrape:
  *   post:
- *     summary: Scrape V-League matches
- *     description: Triggers a scraping job for the current season's schedule from the KOVO website.
+ *     summary: 경기 데이터 스크래핑 및 업데이트
+ *     description: KOVO 공식 홈페이지에서 경기 일정을 크롤링합니다. 새 경기를 추가하고, 기존 경기의 **스코어 및 상태**를 최신으로 업데이트합니다.
  *     tags:
- *       - Admin
+ *       - Admin (관리자)
  *     parameters:
  *       - in: query
  *         name: year
  *         schema:
  *           type: string
- *         description: Year to scrape (e.g. 2025)
+ *         description: 스크래핑할 연도 (예: 2025) - 현재는 전체 시즌 자동 처리
  *       - in: query
  *         name: month
  *         schema:
  *           type: string
- *         description: Month to scrape (e.g. 12)
+ *         description: 스크래핑할 월 (예: 12) - 현재는 전체 시즌 자동 처리
  *     responses:
  *       200:
- *         description: Scrape successful
+ *         description: 스크래핑 및 업데이트 성공
  *         content:
  *           application/json:
  *             schema:
@@ -34,8 +34,9 @@ import { NextResponse } from "next/server";
  *                   type: string
  *                 count:
  *                   type: number
+ *                   description: 새로 추가된 경기 수
  *       500:
- *         description: Server error
+ *         description: 서버 내부 오류
  */
 export async function POST(request: Request) {
   try {

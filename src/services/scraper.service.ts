@@ -167,13 +167,25 @@ export class ScraperService {
         const [rows] = await pool.query<RowDataPacket[]>(checkQuery, [fullDateTime, m.home]);
 
         if (rows.length === 0) {
+          // New Match
           await pool.query(
-            `INSERT INTO matches 
-            (match_date, home_team, away_team, location, home_score, away_score, status, sport, created_at) 
+            `INSERT INTO matches
+            (match_date, home_team, away_team, location, home_score, away_score, status, sport, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, 'VOLLEYBALL', NOW())`,
             [fullDateTime, m.home, m.away, m.stadium || "Unknown", m.homeScore, m.awayScore, status]
           );
           savedCount++;
+        } else {
+          // Existing Match - Update Score & Status
+          // Only update if score changed or status changed to avoid unnecessary writes?
+          // For simplicity, just update.
+          await pool.query(`UPDATE matches SET home_score = ?, away_score = ?, status = ? WHERE id = ?`, [
+            m.homeScore,
+            m.awayScore,
+            status,
+            rows[0].id,
+          ]);
+          // Don't increment savedCount for updates, or maybe track updatedCount?
         }
       }
 

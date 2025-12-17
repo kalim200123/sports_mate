@@ -5,20 +5,20 @@ import { NextResponse } from "next/server";
  * @swagger
  * /api/rooms/{id}/messages:
  *   get:
- *     summary: Fetch chat history for a room
+ *     summary: 채팅방 메시지 내역 조회
+ *     description: 특정 채팅방의 과거 메시지 내역을 조회합니다. 사용자 정보(닉네임, 아바타)가 포함됩니다.
  *     tags:
- *       - Rooms
- *     description: Returns list of messages with sender info
+ *       - Rooms (채팅방)
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         description: Room ID
+ *         description: 채팅방 ID
  *     responses:
  *       200:
- *         description: List of messages
+ *         description: 메시지 목록 조회 성공
  *         content:
  *           application/json:
  *             schema:
@@ -40,9 +40,9 @@ import { NextResponse } from "next/server";
  *                       avatar_url:
  *                         type: string
  *       400:
- *         description: Invalid Room ID
+ *         description: 잘못된 채팅방 ID
  *       500:
- *         description: Server Error
+ *         description: 서버 내부 오류
  */
 export async function GET(
   request: Request,
