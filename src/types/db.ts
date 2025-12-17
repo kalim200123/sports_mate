@@ -29,8 +29,12 @@ export interface User {
   age_group: string;
   mbti?: string | null;
   cheering_styles: CheeringStyle[]; // JSON array
+  my_team?: string | null;
   profile_image_url?: string | null;
   avatar_id: number;
+  title?: string;
+  win_rate?: number;
+  total_visit?: number;
   status?: string;
   created_at: Date;
   updated_at: Date;
@@ -52,6 +56,7 @@ export interface MatchInfo {
 export interface Room {
   id: number;
   match_id: number;
+  match_date?: Date;
   host_id: number;
   title: string;
   content: string | null;
@@ -59,6 +64,9 @@ export interface Room {
   ticket_status: "RESERVED" | "NOT_RESERVED";
   max_count: number;
   status: RoomStatus;
+  current_count?: number; // Add current_count
+  home_team?: string;
+  away_team?: string;
   created_at: Date;
   updated_at: Date;
   deleted_at?: Date | null;

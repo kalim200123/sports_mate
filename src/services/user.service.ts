@@ -66,24 +66,78 @@ export class UserService {
   }
 
   /**
-   * 유저 정보 수정
+   * 유저 업데이트
    */
-  static async updateUser(userId: number, data: Partial<User>): Promise<void> {
-    // 1. 업데이트할 필드 준비
-    const updates: Record<string, string | number | null | undefined> = {};
-    if (data.nickname) updates.nickname = data.nickname;
-    if (data.gender) updates.gender = data.gender;
-    if (data.age_group) updates.age_group = data.age_group;
-    if (data.mbti !== undefined) updates.mbti = data.mbti;
+  static async updateUser(id: number, data: Partial<User>): Promise<void> {
+    const { nickname, gender, age_group, cheering_styles, my_team, mbti } = data;
 
-    // JSON 필드 처리
-    if (data.cheering_styles) {
-      updates.cheering_styles = JSON.stringify(data.cheering_styles);
+    // Build dynamic query
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    if (nickname) {
+      fields.push("nickname = ?");
+      values.push(nickname);
+    }
+    if (gender) {
+      fields.push("gender = ?");
+      values.push(gender);
+    }
+    if (age_group) {
+      fields.push("age_group = ?");
+      values.push(age_group);
+    }
+    if (cheering_styles) {
+      fields.push("cheering_styles = ?");
+      values.push(JSON.stringify(cheering_styles));
+    }
+    if (my_team) {
+      fields.push("my_team = ?");
+      values.push(my_team);
+    }
+    if (mbti) {
+      fields.push("mbti = ?");
+      values.push(mbti);
+    }
+    if (data.profile_image_url !== undefined) {
+      fields.push("profile_image_url = ?");
+      values.push(data.profile_image_url);
+    }
+    if (data.avatar_id !== undefined) {
+      fields.push("avatar_id = ?");
+      values.push(data.avatar_id);
     }
 
-    if (Object.keys(updates).length === 0) return;
+    if (data.win_rate !== undefined) {
+      fields.push("win_rate = ?");
+      values.push(data.win_rate);
+    }
 
-    const query = `UPDATE users SET ? WHERE id = ?`;
-    await pool.query(query, [updates, userId]);
+    if (data.total_visit !== undefined) {
+      fields.push("total_visit = ?");
+      values.push(data.total_visit);
+    }
+    if (data.title !== undefined) {
+      fields.push("title = ?");
+      values.push(data.title);
+    }
+
+    const query = `UPDATE users SET ${fields.join(", ")} WHERE id = ?`;
+    values.push(id);
+
+    await pool.query(query, values);
+  }
+
+  /**
+   * 공개 프로필 조회
+   */
+  static async getPublicProfile(id: number): Promise<Partial<User> | null> {
+    const query = `
+      SELECT id, nickname, gender, age_group, cheering_styles, my_team, mbti, avatar_id 
+      FROM users 
+      WHERE id = ? AND deleted_at IS NULL
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [id]);
+    return (rows[0] as Partial<User>) || null;
   }
 }

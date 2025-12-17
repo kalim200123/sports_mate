@@ -11,3 +11,16 @@ export const WOMEN_TEAMS = [
 ];
 
 export const ALL_TEAMS = [...MEN_TEAMS, ...WOMEN_TEAMS];
+
+export const CHEERING_STYLES = [
+  "목청 황제 📢",
+  "전략 분석가 🧐",
+  "먹방 러버 🍕",
+  "조용히 집중 🤫",
+  "리액션 부자 🤩",
+  "새싹 뉴비 🌱",
+  "유니폼 수집가 👕",
+  "응원가 마스터 🎵",
+  "포토그래퍼 📸",
+  "사교적인 팬 🤝",
+];

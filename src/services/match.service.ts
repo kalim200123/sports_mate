@@ -106,4 +106,17 @@ export class MatchService {
   static async getMatchesByDate(dateStr: string): Promise<Match[]> {
     return this.getMatches({ date: dateStr });
   }
+  /**
+   * 특정 팀의 경기 일정을 가져옵니다. (오늘 이후)
+   */
+  static async getMatchesByTeam(teamName: string): Promise<Match[]> {
+    const query = `
+      SELECT * FROM matches 
+      WHERE (home_team = ? OR away_team = ?) 
+      AND match_date >= CURDATE()
+      ORDER BY match_date ASC
+    `;
+    const [rows] = await pool.query<Match[]>(query, [teamName, teamName]);
+    return rows;
+  }
 }

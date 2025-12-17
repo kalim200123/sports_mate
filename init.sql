@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     age_group VARCHAR(20),
     mbti VARCHAR(10),
     cheering_styles JSON NOT NULL, -- Defaults to '[]' via Application or Trigger, schema says DEFAULT (JSON_ARRAY())
+    my_team VARCHAR(50), -- User's supported team
     profile_image_url VARCHAR(2048),
     avatar_id INT DEFAULT 1,
     status VARCHAR(20) DEFAULT 'ACTIVE',

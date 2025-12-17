@@ -27,6 +27,8 @@ import { NextResponse } from "next/server";
  *                 enum: [MALE, FEMALE]
  *               age_group:
  *                 type: string
+ *               my_team:
+ *                 type: string
  *               cheering_styles:
  *                 type: array
  *                 items:
@@ -65,7 +67,17 @@ export async function GET() {
 /**
  * @swagger
  * /api/users/profile:
- *   put:
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       400:
+ *         description: Validation Error
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server Error
+ */
+export async function PUT(request: Request) {
   try {
     // 1. Auth Check
     const session = await getServerSession(authOptions);
@@ -77,10 +89,13 @@ export async function GET() {
     const body = await request.json();
 
     // 2. Validation (Controller Layer Responsibility)
-    const { nickname, gender, age_group, cheering_styles } = body;
+    const { nickname, gender, age_group, cheering_styles, my_team, profile_image_url, title, win_rate, total_visit } =
+      body;
+
+    // Optional: Add validation for new fields if needed
 
     if (!nickname || !gender) {
-      return NextResponse.json({ error: "Nickname and Gender are required" }, { status: 400 });
+      return NextResponse.json({ error: "Required fields missing" }, { status: 400 });
     }
 
     // 3. Call Service Layer
@@ -89,6 +104,11 @@ export async function GET() {
       gender,
       age_group,
       cheering_styles,
+      my_team,
+      profile_image_url,
+      title,
+      win_rate,
+      total_visit,
     });
 
     return NextResponse.json({ success: true });
@@ -97,4 +117,3 @@ export async function GET() {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-*/

@@ -19,7 +19,9 @@ export default function MatchingRoomList() {
       const res = await fetch(`/api/rooms?match_id=${matchId}`);
       const data = await res.json();
       if (data.success) {
-        setRooms(data.data);
+        // Filter out OFFICIAL_CHAT
+        const filteredRooms = data.data.filter((r: any) => r.title !== "OFFICIAL_CHAT");
+        setRooms(filteredRooms);
       }
     } catch (error) {
       console.error(error);

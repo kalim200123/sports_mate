@@ -108,4 +108,20 @@ export class RoomService {
       [userId, roomId]
     );
   }
+  /**
+   * 사용자가 참여 중인 방 목록 조회
+   */
+  static async getUserJoinedRooms(userId: number): Promise<Room[]> {
+    const query = `
+      SELECT r.*, m.home_team, m.away_team, m.match_date,
+             (SELECT COUNT(*) FROM user_rooms ur2 WHERE ur2.room_id = r.id AND ur2.status = 'JOINED') as current_count
+      FROM user_rooms ur
+      JOIN rooms r ON ur.room_id = r.id
+      JOIN matches m ON r.match_id = m.id
+      WHERE ur.user_id = ? AND ur.status = 'JOINED' AND r.deleted_at IS NULL AND r.title != 'OFFICIAL_CHAT'
+      ORDER BY r.created_at DESC
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [userId]);
+    return rows as Room[];
+  }
 }

@@ -1,7 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -12,16 +11,16 @@ export function getAvatarUrl(avatarId: number): string {
   return `/avatars/${validId}.png`;
 }
 
-
 export const getTeamColor = (teamName: string) => {
   if (teamName.includes("대한항공")) return "bg-[#0065b3]";
   if (teamName.includes("현대캐피탈")) return "bg-[#000000]";
   if (teamName.includes("한국전력")) return "bg-[#d6001a]";
   if (teamName.includes("우리카드")) return "bg-[#008485]";
-  if (teamName.includes("OK")) return "bg-[#ff6600]";
-  if (teamName.includes("KB")) return "bg-[#ffcc00]";
-  if (teamName.includes("삼성화재")) return "bg-[#004898]";
+  if (teamName.includes("OK금융그룹")) return "bg-[#ff6600]";
+  if (teamName.includes("KB손해보험")) return "bg-[#ffcd00]";
+  if (teamName.includes("삼성화재")) return "bg-[#0b4ea2]";
 
+  // Women
   if (teamName.includes("흥국생명")) return "bg-[#ea007e]";
   if (teamName.includes("현대건설")) return "bg-[#003764]";
   if (teamName.includes("정관장")) return "bg-[#cf0a2c]";
@@ -30,10 +29,10 @@ export const getTeamColor = (teamName: string) => {
   if (teamName.includes("도로공사")) return "bg-[#002d72]";
   if (teamName.includes("페퍼")) return "bg-[#ed1c24]";
 
-  return "bg-zinc-500";
+  return "bg-gray-500";
 };
 
-export const getTeamEmblem = (teamName: string) => {
+export function getTeamEmblem(teamName: string) {
   // Men
   if (teamName.includes("현대캐피탈")) return "https://cdn.dev.kovo.co.kr/favicons/skywalkers.svg";
   if (teamName.includes("대한항공")) return "https://cdn.dev.kovo.co.kr/favicons/jumbos.svg";
@@ -49,8 +48,8 @@ export const getTeamEmblem = (teamName: string) => {
   if (teamName.includes("현대건설")) return "https://cdn.dev.kovo.co.kr/favicons/hillstate.svg";
   if (teamName.includes("IBK")) return "https://cdn.dev.kovo.co.kr/favicons/altos.svg";
   if (teamName.includes("도로공사")) return "https://cdn.dev.kovo.co.kr/favicons/hipass.svg";
-  if (teamName.includes("페퍼")) return "https://cdn.dev.kovo.co.kr/favicons/aipeppers.svg";
   if (teamName.includes("GS")) return "https://cdn.dev.kovo.co.kr/favicons/kixx.svg";
+  if (teamName.includes("페퍼")) return "https://cdn.dev.kovo.co.kr/favicons/peppers.svg";
 
-  return "";
-};
+  return "/icons/volleyball.png"; // Fallback
+}

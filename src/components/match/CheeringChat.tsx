@@ -1,5 +1,6 @@
 "use client";
 
+import UserModal from "@/components/user/UserModal";
 import { useUserStore } from "@/store/use-user-store";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
@@ -17,16 +18,19 @@ interface Message {
 interface CheeringChatProps {
   roomId: string;
   hostId?: number;
-  initialJoinedUsers?: { nickname: string; avatar_url: string }[];
+  initialJoinedUsers?: { userId?: number; nickname: string; avatar_url: string }[];
 }
 
 export default function CheeringChat({ roomId, hostId, initialJoinedUsers }: CheeringChatProps) {
   const { user } = useUserStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [joinedUsers, setJoinedUsers] = useState<{ nickname: string; avatar_url: string }[]>(initialJoinedUsers || []);
+  const [joinedUsers, setJoinedUsers] = useState<{ userId?: number; nickname: string; avatar_url: string }[]>(
+    initialJoinedUsers || []
+  );
   const [joinStatus, setJoinStatus] = useState<"PENDING" | "JOINED" | null>(null);
   const [pendingUsers, setPendingUsers] = useState<{ userId: number; nickname: string; avatar_url: string }[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -143,16 +147,24 @@ export default function CheeringChat({ roomId, hostId, initialJoinedUsers }: Che
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
-      <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex items-center justify-between">
-        <h2 className="font-bold text-lg flex items-center gap-2 overflow-hidden">
+    <div className="flex flex-col h-full bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+      {/* Modal Integration */}
+      {selectedUserId && <UserModal userId={selectedUserId} onClose={() => setSelectedUserId(null)} />}
+
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-white dark:bg-zinc-900 relative">
+        <h2 className="font-bold text-lg flex items-center gap-2">
+          📣 실시간 응원톡
           {/* Nicknames display */}
           <div className="flex -space-x-2 overflow-hidden items-center py-1">
             <span className="text-sm font-semibold mr-2 text-zinc-600 dark:text-zinc-400 shrink-0">참여자:</span>
             {joinedUsers.slice(0, 5).map((u, i) => (
               <div
                 key={i}
-                className="relative group shrink-0 w-8 h-8 rounded-full border-2 border-white dark:border-zinc-900 overflow-hidden bg-zinc-200"
+                className={`relative group shrink-0 w-8 h-8 rounded-full border-2 border-white dark:border-zinc-900 overflow-hidden bg-zinc-200 ${
+                  u.userId ? "cursor-pointer" : ""
+                }`}
+                onClick={() => u.userId && setSelectedUserId(u.userId)}
               >
                 {u.avatar_url ? (
                   <Image src={u.avatar_url} alt={u.nickname} width={32} height={32} className="object-cover" />
@@ -197,13 +209,14 @@ export default function CheeringChat({ roomId, hostId, initialJoinedUsers }: Che
         ) : (
           <div className="space-y-4">
             {messages.map((msg, index) => {
-              const isMe = user ? msg.user_id === user.id : false;
+              const isMe = user ? msg.user_id === user.id : false; // Note: msg.user_id might need Number conversion if string? Assuming match.
               return (
                 <div key={index} className={`flex gap-3 ${isMe ? "flex-row-reverse" : ""}`}>
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden ${
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity ${
                       isMe ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600"
                     }`}
+                    onClick={() => setSelectedUserId(Number(msg.user_id))}
                   >
                     {msg.avatar_url ? (
                       <Image src={msg.avatar_url} alt="avatar" width={32} height={32} className="object-cover" />
