@@ -18,15 +18,23 @@ export default function UserModal({ userId, onClose }: UserModalProps) {
 
   useEffect(() => {
     if (userId) {
-      setIsLoading(true);
-      fetch(`/api/users/${userId}/public`)
-        .then((res) => res.json())
-        .then((data) => {
+      // Fetch logic
+      const fetchData = async () => {
+        setIsLoading(true);
+        try {
+          const res = await fetch(`/api/users/${userId}/public`);
+          const data = await res.json();
           if (data.success) {
             setProfile(data.data);
           }
-        })
-        .finally(() => setIsLoading(false));
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchData();
     } else {
       setProfile(null);
       setIsReporting(false);
@@ -155,11 +163,7 @@ export default function UserModal({ userId, onClose }: UserModalProps) {
 
             {/* Avatar */}
             <div className="w-28 h-28 bg-zinc-100 rounded-full mb-4 relative overflow-hidden border-[6px] border-zinc-50 dark:border-zinc-800 shadow-xl group">
-              {profile.profile_image_url ? (
-                <Image src={profile.profile_image_url} alt="avatar" fill className="object-cover" />
-              ) : (
-                <Image src={`/avatars/${profile.avatar_id || 1}.png`} alt="avatar" fill className="object-cover" />
-              )}
+              <Image src={profile.profile_image_url || "/avatars/1.png"} alt="avatar" fill className="object-cover" />
             </div>
 
             {/* Nickname & Team */}

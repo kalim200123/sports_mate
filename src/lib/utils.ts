@@ -5,8 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Deprecated or Used for backward compatibility mapping if needed
 export function getAvatarUrl(avatarId: number): string {
-  // Default to 1 if invalid or null
+  // If we still receive ID for some reason, map it.
   const validId = avatarId && avatarId > 0 && avatarId <= 10 ? avatarId : 1;
   return `/avatars/${validId}.png`;
 }

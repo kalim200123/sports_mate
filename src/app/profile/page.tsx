@@ -1,6 +1,6 @@
 "use client";
 
-import { CHEERING_STYLES, MEN_TEAMS, WOMEN_TEAMS } from "@/lib/constants";
+import { CHEERING_STYLES, MEN_TEAMS, TITLES, WOMEN_TEAMS } from "@/lib/constants";
 import { getTeamEmblem } from "@/lib/utils";
 import { Match } from "@/services/match.service";
 import { useUserStore } from "@/store/use-user-store";
@@ -27,6 +27,23 @@ export default function ProfilePage() {
 
   const [isEditingStyles, setIsEditingStyles] = useState(false);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
+
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+
+  const handleTitleSelect = async (titleName: string) => {
+    if (!user) return;
+    updateProfile({ title: titleName });
+    await fetch("/api/users/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: titleName,
+        nickname: user.nickname,
+        gender: user.gender,
+      }),
+    });
+    setIsEditingTitle(false);
+  };
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -222,7 +239,7 @@ export default function ProfilePage() {
                 >
                   <div className="w-full h-full rounded-full overflow-hidden relative border-4 border-red-50">
                     <Image
-                      src={user.profile_image_url || `/avatars/${user.avatar_id || 1}.png`}
+                      src={user.profile_image_url || "/avatars/1.png"}
                       alt="avatar"
                       fill
                       className="object-cover transition-transform group-hover:scale-105"
@@ -312,10 +329,16 @@ export default function ProfilePage() {
                   </div>
 
                   {/* Item 2: Title */}
-                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 flex flex-col items-center justify-center min-h-[100px]">
+                  <div
+                    className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 flex flex-col items-center justify-center min-h-[100px] cursor-pointer hover:bg-white/20 transition-colors relative"
+                    onClick={() => setIsEditingTitle(true)}
+                  >
                     <span className="text-xs text-red-100 mb-1">칭호</span>
                     <span className="text-2xl">🏅</span>
                     <span className="font-bold text-sm mt-1">{user.title || "신입 메이트"}</span>
+                    <button className="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 rounded-full hover:bg-white/30">
+                      변경
+                    </button>
                   </div>
 
                   {/* Item 3: Win Rate */}
@@ -468,6 +491,16 @@ export default function ProfilePage() {
                         <div className="text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded shrink-0">
                           {room.title === "OFFICIAL_CHAT" ? "공식" : "직관"}
                         </div>
+                        {room.role === "HOST" && (
+                          <span className="text-[10px] font-bold text-red-600 bg-red-100 dark:bg-red-900/40 px-1.5 py-0.5 rounded shrink-0 border border-red-200 dark:border-red-800">
+                            👑 방장
+                          </span>
+                        )}
+                        {room.role === "GUEST" && (
+                          <span className="text-[10px] font-medium text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded shrink-0">
+                            참여
+                          </span>
+                        )}
                         <h4 className="font-bold text-zinc-900 dark:text-zinc-100 mb-0 group-hover:text-blue-600 transition-colors line-clamp-1 text-sm">
                           {room.title}
                         </h4>
@@ -602,6 +635,82 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+
+      {/* Title Selection Modal */}
+      {isEditingTitle && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={() => setIsEditingTitle(false)}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[80vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-bold mb-4 text-center">칭호 선택</h3>
+            <p className="text-sm text-zinc-500 text-center mb-6">해금된 칭호를 선택하여 프로필에 표시해보세요!</p>
+
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-hide">
+              {TITLES.map((t) => {
+                const isUnlocked = user.unlocked_titles?.some((ut) => ut.id === t.id);
+                const isEquipped = user.title === t.name;
+
+                return (
+                  <button
+                    key={t.id}
+                    disabled={!isUnlocked}
+                    onClick={() => handleTitleSelect(t.name)}
+                    className={`w-full p-4 rounded-xl border flex items-center justify-between transition-all text-left ${
+                      isEquipped
+                        ? "border-red-500 bg-red-50 dark:bg-red-900/20 ring-1 ring-red-500"
+                        : isUnlocked
+                        ? "border-zinc-200 dark:border-zinc-700 hover:border-red-300 hover:bg-red-50/50"
+                        : "border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 opacity-60 cursor-not-allowed"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span
+                          className={`font-bold ${isUnlocked ? "text-zinc-900 dark:text-zinc-100" : "text-zinc-400"}`}
+                        >
+                          {t.name}
+                        </span>
+                        {isEquipped && (
+                          <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">
+                            장착 중
+                          </span>
+                        )}
+                        {!isUnlocked && (
+                          <span className="text-[10px] bg-zinc-200 text-zinc-500 px-1.5 py-0.5 rounded">잠김</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-zinc-500">{t.description}</p>
+                      {!isUnlocked && (
+                        <p className="text-[10px] text-red-400 mt-1 font-medium">🔓 해금 조건: {t.condition}</p>
+                      )}
+                    </div>
+                    {isUnlocked && (
+                      <div
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          isEquipped ? "border-red-500" : "border-zinc-300"
+                        }`}
+                      >
+                        {isEquipped && <div className="w-2.5 h-2.5 bg-red-500 rounded-full" />}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setIsEditingTitle(false)}
+              className="mt-6 w-full py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-bold rounded-xl hover:bg-zinc-200"
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

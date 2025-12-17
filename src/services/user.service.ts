@@ -18,7 +18,11 @@ export class UserService {
   static async findById(id: number): Promise<User | null> {
     const query = `SELECT * FROM users WHERE id = ? AND deleted_at IS NULL`;
     const [rows] = await pool.query<RowDataPacket[]>(query, [id]);
-    return (rows[0] as User) || null;
+    const user = (rows[0] as User) || null;
+    if (user) {
+      user.unlocked_titles = this.getUnlockedTitles(user);
+    }
+    return user;
   }
 
   /**
@@ -41,11 +45,12 @@ export class UserService {
 
     // Avatar assignment (F: 1-3, M: 4-6)
     const avatarOffset = gender === "FEMALE" ? 1 : 4;
-    const avatarId = Math.floor(Math.random() * 3) + avatarOffset;
+    const randomNum = Math.floor(Math.random() * 3) + avatarOffset;
+    const defaultProfileUrl = `/avatars/${randomNum}.png`;
 
     // DB INSERT
     const insertQuery = `
-      INSERT INTO users (kakao_id, nickname, gender, age_group, cheering_styles, mbti, avatar_id)
+      INSERT INTO users (kakao_id, nickname, gender, age_group, cheering_styles, mbti, profile_image_url)
       VALUES (?, ?, ?, ?, ?, NULL, ?)
     `;
 
@@ -55,7 +60,7 @@ export class UserService {
       gender,
       ageGroup,
       cheeringStylesJson,
-      avatarId,
+      defaultProfileUrl,
     ]);
 
     // 3. 생성된 유저 다시 조회해서 반환
@@ -103,10 +108,6 @@ export class UserService {
       fields.push("profile_image_url = ?");
       values.push(data.profile_image_url);
     }
-    if (data.avatar_id !== undefined) {
-      fields.push("avatar_id = ?");
-      values.push(data.avatar_id);
-    }
 
     if (data.win_rate !== undefined) {
       fields.push("win_rate = ?");
@@ -131,13 +132,54 @@ export class UserService {
   /**
    * 공개 프로필 조회
    */
+  /**
+   * 칭호 목록 계산
+   */
+  static getUnlockedTitles(user: Partial<User>): { id: string; name: string }[] {
+    const titles = [
+      { id: "newbie", name: "신입 메이트" }, // Default
+    ];
+
+    if ((user.total_visits || 0) >= 1) {
+      titles.push({ id: "debut", name: "직관 데뷔" });
+    }
+
+    if ((user.total_visits || 0) >= 5) {
+      titles.push({ id: "pro_visit", name: "프로 직관러" });
+    }
+
+    if ((user.total_visits || 0) >= 5 && (user.win_rate || 0) >= 60) {
+      titles.push({ id: "victory_fairy", name: "승리 요정" });
+    }
+
+    if ((user.loss_count || 0) >= 5) {
+      titles.push({ id: "unbreakable", name: "꺾이지 않는 마음" });
+    }
+
+    // True Fan: My Team + 10 visits
+    if (user.my_team && (user.total_visits || 0) >= 10) {
+      titles.push({ id: "true_fan", name: `${user.my_team} 찐팬` });
+    }
+
+    return titles;
+  }
+
+  /**
+   * 공개 프로필 조회
+   */
   static async getPublicProfile(id: number): Promise<Partial<User> | null> {
     const query = `
-      SELECT id, nickname, gender, age_group, cheering_styles, my_team, mbti, avatar_id 
+      SELECT id, nickname, gender, age_group, cheering_styles, my_team, mbti, profile_image_url, title, win_rate, total_visits, win_count, loss_count
       FROM users 
       WHERE id = ? AND deleted_at IS NULL
     `;
     const [rows] = await pool.query<RowDataPacket[]>(query, [id]);
-    return (rows[0] as Partial<User>) || null;
+    const user = (rows[0] as Partial<User>) || null;
+
+    if (user) {
+      user.unlocked_titles = this.getUnlockedTitles(user);
+    }
+
+    return user;
   }
 }

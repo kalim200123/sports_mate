@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/lib/auth";
 import { TicketService } from "@/services/ticket.service";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 /**
  * @swagger
@@ -13,7 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
  *       200:
  *         description: 조회 성공
  */
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const user = await getSessionUser();
     // TODO: Admin Check

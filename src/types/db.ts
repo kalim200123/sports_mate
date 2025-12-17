@@ -31,8 +31,9 @@ export interface User {
   cheering_styles: CheeringStyle[]; // JSON array
   my_team?: string | null;
   profile_image_url?: string | null;
-  avatar_id: number;
+  // avatar_id: number; // Deprecated
   title?: string;
+  unlocked_titles?: { id: string; name: string }[]; // Derived field
   win_rate?: number;
   total_visits?: number;
   win_count?: number;
@@ -72,6 +73,7 @@ export interface Room {
   created_at: Date;
   updated_at: Date;
   deleted_at?: Date | null;
+  role?: UserRoomRole;
 }
 
 export interface UserRoom {

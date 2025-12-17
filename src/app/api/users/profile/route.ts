@@ -116,7 +116,19 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Required fields missing" }, { status: 400 });
     }
 
-    // 3. Call Service Layer
+    // 3. Title Validation
+    if (title) {
+      const user = await UserService.findById(userId);
+      if (user) {
+        const unlockedTitles = user.unlocked_titles || []; // findById now populates this
+        const isValidTitle = unlockedTitles.some((t) => t.name === title);
+        if (!isValidTitle) {
+          return NextResponse.json({ error: "Title not unlocked" }, { status: 400 });
+        }
+      }
+    }
+
+    // 4. Call Service Layer
     await UserService.updateUser(userId, {
       nickname,
       gender,

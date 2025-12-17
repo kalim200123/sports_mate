@@ -80,7 +80,7 @@ export class RoomService {
 
     // Fetch joined users
     const userQuery = `
-      SELECT u.id, u.nickname, u.avatar_id
+      SELECT u.id, u.nickname, u.profile_image_url
       FROM user_rooms ur
       JOIN users u ON ur.user_id = u.id
       WHERE ur.room_id = ? AND ur.status = 'JOINED'
@@ -99,7 +99,7 @@ export class RoomService {
       joined_users: userRows.map((u) => ({
         userId: u.id,
         nickname: u.nickname,
-        avatar_url: `/avatars/${u.avatar_id}.png`,
+        avatar_url: u.profile_image_url || "/avatars/1.png",
       })), // Simple mapping
     };
   }
@@ -152,7 +152,7 @@ export class RoomService {
    */
   static async getUserJoinedRooms(userId: number): Promise<Room[]> {
     const query = `
-      SELECT r.*, m.home_team, m.away_team, m.match_date,
+      SELECT r.*, m.home_team, m.away_team, m.match_date, ur.role,
              (SELECT COUNT(*) FROM user_rooms ur2 WHERE ur2.room_id = r.id AND ur2.status = 'JOINED') as current_count
       FROM user_rooms ur
       JOIN rooms r ON ur.room_id = r.id
