@@ -6,15 +6,23 @@ import { NextResponse } from "next/server";
  * /api/rooms:
  *   get:
  *     summary: 채팅방 목록 조회
- *     description: 조건에 맞는 채팅방 목록을 조회합니다. (예: 특정 경기 ID로 필터링)
+ *     description: "조건에 맞는 채팅방 목록을 조회합니다. (예: 특정 경기 ID로 필터링)"
  *     tags:
  *       - Rooms (채팅방)
  *     parameters:
  *       - in: query
- *         name: match_id
+ *         name: matchId
+ *         required: false
  *         schema:
  *           type: integer
- *         description: 경기(Match) ID (선택 사항)
+ *         description: "경기 ID (입력 시 해당 경기의 채팅방만 조회)"
+ *       - in: query
+ *         name: status
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [OPEN, FULL, CLOSED]
+ *         description: "채팅방 상태 (기본값: OPEN)"
  *     responses:
  *       200:
  *         description: 채팅방 목록 조회 성공

@@ -15,7 +15,7 @@ import { NextRequest, NextResponse } from "next/server";
  *         required: true
  *         schema:
  *           type: string
- *         description: 팀 이름 (예: 대한항공, 흥국생명)
+ *         description: "팀 이름 (예: 대한항공, 흥국생명)"
  *     responses:
  *       200:
  *         description: 조회 성공

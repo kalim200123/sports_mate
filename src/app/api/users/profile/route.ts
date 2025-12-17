@@ -30,10 +30,10 @@ import { NextResponse } from "next/server";
  *                 description: 성별
  *               age_group:
  *                 type: string
- *                 description: 연령대 (예: 20s, 30s)
+ *                 description: "연령대 (예: 20s, 30s)"
  *               my_team:
  *                 type: string
- *                 description: 응원하는 팀 이름 (예: 서울 우리카드)
+ *                 description: "응원하는 팀 이름 (예: 서울 우리카드)"
  *               cheering_styles:
  *                 type: array
  *                 items:
@@ -48,7 +48,7 @@ import { NextResponse } from "next/server";
  *               win_rate:
  *                 type: number
  *                 description: 직관 승률
- *               total_visit:
+ *               total_visits:
  *                 type: number
  *                 description: 직관 횟수
  *     responses:
@@ -107,7 +107,7 @@ export async function PUT(request: Request) {
     const body = await request.json();
 
     // 2. Validation (Controller Layer Responsibility)
-    const { nickname, gender, age_group, cheering_styles, my_team, profile_image_url, title, win_rate, total_visit } =
+    const { nickname, gender, age_group, cheering_styles, my_team, profile_image_url, title, win_rate, total_visits } =
       body;
 
     // Optional: Add validation for new fields if needed
@@ -126,7 +126,7 @@ export async function PUT(request: Request) {
       profile_image_url,
       title,
       win_rate,
-      total_visit,
+      total_visits,
     });
 
     return NextResponse.json({ success: true });

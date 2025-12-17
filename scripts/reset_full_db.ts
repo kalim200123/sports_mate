@@ -1,5 +1,5 @@
 import "dotenv/config"; // Load environment variables!
-import pool from "./src/lib/db";
+import pool from "../src/lib/db";
 
 async function resetFullDatabase() {
   try {
@@ -30,6 +30,8 @@ async function resetFullDatabase() {
         mbti CHAR(4) NULL,
         cheering_styles JSON NOT NULL,
         win_rate DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+        win_count INT NOT NULL DEFAULT 0,
+        loss_count INT NOT NULL DEFAULT 0,
         total_visits INT NOT NULL DEFAULT 0,
         title VARCHAR(50) NULL,
         deleted_at DATETIME NULL,

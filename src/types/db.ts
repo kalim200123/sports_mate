@@ -34,7 +34,9 @@ export interface User {
   avatar_id: number;
   title?: string;
   win_rate?: number;
-  total_visit?: number;
+  total_visits?: number;
+  win_count?: number;
+  loss_count?: number;
   status?: string;
   created_at: Date;
   updated_at: Date;
@@ -49,7 +51,7 @@ export interface MatchInfo {
   stadium: string;
   home_score: number;
   away_score: number;
-  status: "SCHEDULED" | "LIVE" | "ENDED";
+  status: "SCHEDULED" | "LIVE" | "ENDED" | "COMPLETED";
   created_at: Date;
 }
 
@@ -93,4 +95,14 @@ export interface RoomMessage {
   content: string;
   message_type: "TEXT" | "IMAGE" | "SYSTEM";
   created_at: Date;
+}
+
+export interface TicketAuth {
+  id: number;
+  user_id: number;
+  match_id: number;
+  image_url: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  created_at: Date;
+  updated_at: Date;
 }

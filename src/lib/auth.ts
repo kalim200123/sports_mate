@@ -62,3 +62,16 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET || "dev-secret-key", // 개발용 기본 시크릿
 };
+
+import { getServerSession } from "next-auth"; // Moved import to top if possible, but here for context
+
+export async function getSessionUser() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return null;
+
+  // Return user with numeric ID
+  return {
+    ...session.user,
+    id: Number(session.user.id),
+  };
+}

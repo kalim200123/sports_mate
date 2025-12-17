@@ -1,3 +1,4 @@
+import MatchAuthActions from "@/components/match/MatchAuthActions";
 import MatchFilter from "@/components/MatchFilter";
 import ScrollToTop from "@/components/ScrollToTop";
 import { getTeamEmblem } from "@/lib/utils";
@@ -157,12 +158,7 @@ export default async function Home(props: PageProps) {
 
                       {/* Right: Actions */}
                       <div className="flex items-center gap-2 w-full md:w-auto justify-center md:justify-end px-2 mt-2 md:mt-0">
-                        <a
-                          href={`/match/${match.id}`}
-                          className="px-4 py-1.5 bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-bold hover:bg-blue-100 dark:hover:bg-zinc-700 transition-colors"
-                        >
-                          상세보기
-                        </a>
+                        <MatchAuthActions matchId={match.id} />
                       </div>
                     </div>
                   ))}

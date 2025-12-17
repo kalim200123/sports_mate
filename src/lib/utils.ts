@@ -49,7 +49,7 @@ export function getTeamEmblem(teamName: string) {
   if (teamName.includes("IBK")) return "https://cdn.dev.kovo.co.kr/favicons/altos.svg";
   if (teamName.includes("도로공사")) return "https://cdn.dev.kovo.co.kr/favicons/hipass.svg";
   if (teamName.includes("GS")) return "https://cdn.dev.kovo.co.kr/favicons/kixx.svg";
-  if (teamName.includes("페퍼")) return "https://cdn.dev.kovo.co.kr/favicons/peppers.svg";
+  if (teamName.includes("페퍼")) return "https://cdn.dev.kovo.co.kr/favicons/aipeppers.svg";
 
   return "/icons/volleyball.png"; // Fallback
 }

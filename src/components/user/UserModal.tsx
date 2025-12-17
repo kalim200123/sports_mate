@@ -170,6 +170,10 @@ export default function UserModal({ userId, onClose }: UserModalProps) {
                   <div className="w-5 h-5 relative">
                     <Image src={getTeamEmblem(profile.my_team)} alt={profile.my_team} fill className="object-contain" />
                   </div>
+                  <div className="text-xl font-bold text-zinc-800 dark:text-zinc-100">
+                    {profile.total_visits || 0}
+                    <span className="text-sm font-normal text-zinc-500 ml-0.5">회</span>
+                  </div>
                   <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">{profile.my_team} 팬</span>
                 </div>
               ) : (
@@ -184,11 +188,14 @@ export default function UserModal({ userId, onClose }: UserModalProps) {
                 <span className="text-2xl font-black text-blue-700 dark:text-blue-300">
                   {profile.win_rate !== undefined ? `${profile.win_rate}%` : "-"}
                 </span>
+                <span className="block text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                  {profile.win_count || 0}승 {profile.loss_count || 0}패
+                </span>
               </div>
               <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-2xl text-center">
                 <span className="block text-xs text-purple-600 dark:text-purple-400 font-bold mb-1">직관 횟수</span>
                 <span className="text-2xl font-black text-purple-700 dark:text-purple-300">
-                  {profile.total_visit !== undefined ? `${profile.total_visit}회` : "-"}
+                  {profile.total_visits !== undefined ? `${profile.total_visits}회` : "-"}
                 </span>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import pool from "./src/lib/db";
+import pool from "../src/lib/db";
 
 async function resetRooms() {
   try {

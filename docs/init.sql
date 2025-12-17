@@ -33,6 +33,8 @@ CREATE TABLE users (
 
   -- 찐팬/칭호 (Gamification)
   win_rate DECIMAL(5,2) NOT NULL DEFAULT 0.00 COMMENT '0.00 ~ 100.00',
+  win_count INT NOT NULL DEFAULT 0,
+  loss_count INT NOT NULL DEFAULT 0,
   total_visits INT NOT NULL DEFAULT 0 COMMENT '직관 횟수',
   title VARCHAR(50) NULL COMMENT '현재 칭호(예: 승리요정)',
 

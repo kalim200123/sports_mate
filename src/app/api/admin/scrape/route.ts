@@ -13,13 +13,13 @@ import { NextResponse } from "next/server";
  *       - in: query
  *         name: year
  *         schema:
- *           type: string
- *         description: 스크래핑할 연도 (예: 2025) - 현재는 전체 시즌 자동 처리
+ *           type: integer
+ *         description: "스크래핑할 연도 (예: 2025) - 현재는 전체 시즌 자동 처리"
  *       - in: query
  *         name: month
  *         schema:
- *           type: string
- *         description: 스크래핑할 월 (예: 12) - 현재는 전체 시즌 자동 처리
+ *           type: integer
+ *         description: "스크래핑할 월 (예: 12) - 현재는 전체 시즌 자동 처리"
  *     responses:
  *       200:
  *         description: 스크래핑 및 업데이트 성공

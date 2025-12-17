@@ -322,13 +322,15 @@ export default function ProfilePage() {
                   <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 flex flex-col items-center justify-center min-h-[100px]">
                     <span className="text-xs text-red-100 mb-1">직관 승률</span>
                     <span className="text-xl font-bold">{user.win_rate || 0}%</span>
-                    <span className="text-[10px] opacity-60">0승 0패</span>
+                    <span className="text-[10px] opacity-60">
+                      {user.win_count || 0}승 {user.loss_count || 0}패
+                    </span>
                   </div>
 
                   {/* Item 4: Total Visits */}
                   <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 flex flex-col items-center justify-center min-h-[100px]">
                     <span className="text-xs text-red-100 mb-1">직관 횟수</span>
-                    <span className="text-xl font-bold">{user.total_visit || 0}회</span>
+                    <span className="text-xl font-bold">{user.total_visits || 0}회</span>
                     <span className="text-[10px] opacity-60">이번 시즌</span>
                   </div>
                 </div>

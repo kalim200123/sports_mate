@@ -113,9 +113,9 @@ export class UserService {
       values.push(data.win_rate);
     }
 
-    if (data.total_visit !== undefined) {
-      fields.push("total_visit = ?");
-      values.push(data.total_visit);
+    if (data.total_visits !== undefined) {
+      fields.push("total_visits = ?");
+      values.push(data.total_visits);
     }
     if (data.title !== undefined) {
       fields.push("title = ?");

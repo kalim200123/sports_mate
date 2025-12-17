@@ -43,12 +43,12 @@ export async function POST(request: Request) {
     const file = formData.get("file") as File;
 
     if (!file) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "No file uploaded" }, { status: 400 });
     }
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      return NextResponse.json({ error: "File is not an image" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "File is not an image" }, { status: 400 });
     }
 
     // Prepare Upload Directory
@@ -73,9 +73,9 @@ export async function POST(request: Request) {
 
     // Return Public URL
     const fileUrl = `/uploads/${filename}`;
-    return NextResponse.json({ url: fileUrl });
+    return NextResponse.json({ success: true, url: fileUrl });
   } catch (error) {
     console.error("Upload Error:", error);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Upload failed" }, { status: 500 });
   }
 }
