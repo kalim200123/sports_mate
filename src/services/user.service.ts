@@ -73,7 +73,7 @@ export class UserService {
 
     // Build dynamic query
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: (string | number | null)[] = [];
 
     if (nickname) {
       fields.push("nickname = ?");

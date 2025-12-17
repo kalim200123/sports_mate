@@ -63,6 +63,10 @@
 
 - 방 채팅 로그
 
+### reports (**New**)
+
+- 사용자 신고 내역 (신고자, 대상, 사유, 처리 상태)
+
 ### ticket_auths (optional)
 
 - 직관 인증(경기당 유저 1회 제한: `UNIQUE(user_id, match_id)`)

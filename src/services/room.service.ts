@@ -80,7 +80,7 @@ export class RoomService {
 
     // Fetch joined users
     const userQuery = `
-      SELECT u.nickname, u.avatar_id
+      SELECT u.id, u.nickname, u.avatar_id
       FROM user_rooms ur
       JOIN users u ON ur.user_id = u.id
       WHERE ur.room_id = ? AND ur.status = 'JOINED'
@@ -96,7 +96,11 @@ export class RoomService {
     return {
       ...(rows[0] as Room),
       current_count: rows[0].current_count,
-      joined_users: userRows.map((u) => ({ nickname: u.nickname, avatar_url: `/avatars/${u.avatar_id}.png` })), // Simple mapping
+      joined_users: userRows.map((u) => ({
+        userId: u.id,
+        nickname: u.nickname,
+        avatar_url: `/avatars/${u.avatar_id}.png`,
+      })), // Simple mapping
     };
   }
   /**
@@ -108,6 +112,41 @@ export class RoomService {
       [userId, roomId]
     );
   }
+
+  /**
+   * 사용자 강퇴 (status = 'KICKED')
+   */
+  static async kickUser(roomId: number, userId: number): Promise<void> {
+    await pool.query(
+      "UPDATE user_rooms SET status = 'KICKED', decided_at = NOW(), left_at = NOW() WHERE user_id = ? AND room_id = ?",
+      [userId, roomId]
+    );
+  }
+
+  /**
+   * 방 나가기 (status = 'LEFT')
+   */
+  static async leaveRoom(roomId: number, userId: number): Promise<void> {
+    await pool.query("UPDATE user_rooms SET status = 'LEFT', left_at = NOW() WHERE user_id = ? AND room_id = ?", [
+      userId,
+      roomId,
+    ]);
+  }
+
+  /**
+   * 방 모집 종료 (status = 'CLOSED')
+   */
+  static async closeRoom(roomId: number): Promise<void> {
+    await pool.query("UPDATE rooms SET status = 'CLOSED' WHERE id = ?", [roomId]);
+  }
+
+  /**
+   * 방 공지(설명) 수정
+   */
+  static async updateRoomContent(roomId: number, content: string): Promise<void> {
+    await pool.query("UPDATE rooms SET content = ? WHERE id = ?", [content, roomId]);
+  }
+
   /**
    * 사용자가 참여 중인 방 목록 조회
    */
