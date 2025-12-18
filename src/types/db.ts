@@ -31,6 +31,7 @@ export interface User {
   mbti?: string | null;
   cheering_styles: CheeringStyle[]; // JSON array
   my_team?: string | null;
+  region?: string | null;
   profile_image_url?: string | null;
   title?: string;
   unlocked_titles?: { id: string; name: string }[];
@@ -63,7 +64,8 @@ export interface Room {
   host_id: number;
   title: string;
   content: string | null;
-  location: string | null;
+  notice?: string | null;
+  region?: string | null;
   ticket_status: "RESERVED" | "NOT_RESERVED";
   max_count: number;
   status: RoomStatus;

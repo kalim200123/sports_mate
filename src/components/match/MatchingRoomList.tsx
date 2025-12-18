@@ -1,22 +1,33 @@
-"use client";
-
-import { useParams, useRouter } from "next/navigation";
+import { REGIONS } from "@/lib/constants";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import CreateRoomModal from "./CreateRoomModal";
 
-export default function MatchingRoomList() {
+interface MatchingRoomListProps {
+  matchId: number;
+}
+
+export default function MatchingRoomList({ matchId }: MatchingRoomListProps) {
   const router = useRouter();
-  const params = useParams();
-  const matchId = Number(params.id);
   const [isModalOpen, setIsModalOpen] = useState(false);
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const [rooms, setRooms] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedRegion, setSelectedRegion] = useState("ALL");
 
   // Fetch Rooms
   const fetchRooms = async () => {
+    if (!matchId || isNaN(matchId)) return;
+    setIsLoading(true);
+
     try {
-      const res = await fetch(`/api/rooms?match_id=${matchId}`);
+      const url = new URL("/api/rooms", window.location.origin);
+      url.searchParams.append("match_id", matchId.toString());
+      if (selectedRegion !== "ALL") {
+        url.searchParams.append("region", selectedRegion);
+      }
+
+      const res = await fetch(url.toString(), { cache: "no-store" });
       const data = await res.json();
       if (data.success) {
         // Filter out OFFICIAL_CHAT
@@ -30,11 +41,11 @@ export default function MatchingRoomList() {
     }
   };
 
-  // Initial Fetch
+  // Fetch when filters change
   useEffect(() => {
     fetchRooms();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId]);
+  }, [matchId, selectedRegion]);
 
   // Re-fetch when modal closes (or success)
   const handleModalClose = () => {
@@ -47,13 +58,29 @@ export default function MatchingRoomList() {
       <CreateRoomModal isOpen={isModalOpen} onClose={handleModalClose} matchId={matchId} />
 
       <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900/50">
-        <h2 className="font-bold text-lg">직관 메이트 찾기 🤝</h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-        >
-          방 만들기
-        </button>
+        <h2 className="font-bold text-lg hidden md:block">직관 메이트 찾기 🤝</h2>
+        <h2 className="font-bold text-lg md:hidden">메이트 🤝</h2>
+
+        <div className="flex gap-2">
+          <select
+            className="px-2 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs bg-white dark:bg-zinc-800 focus:outline-none"
+            value={selectedRegion}
+            onChange={(e) => setSelectedRegion(e.target.value)}
+          >
+            <option value="ALL">전체 지역</option>
+            {REGIONS.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap"
+          >
+            방 만들기
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-zinc-50/50 dark:bg-zinc-900/30">
@@ -96,9 +123,9 @@ export default function MatchingRoomList() {
                     {room.current_count || 1}/{room.max_count}
                   </span>
                 </span>
-                {room.location && (
+                {room.region && (
                   <span className="bg-zinc-100 dark:bg-zinc-700 px-1.5 py-0.5 rounded text-[10px]">
-                    📍 {room.location}
+                    📍 {room.region}
                   </span>
                 )}
               </div>

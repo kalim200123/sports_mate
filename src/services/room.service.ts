@@ -7,9 +7,9 @@ export class RoomService {
    * 모든 방 목록 조회 (필터링 지원)
    * 비즈니스 로직은 여기서 처리 (DB 조회, 데이터 가공 등)
    */
-  static async getRooms(filters: { matchId?: number; sport?: string } = {}): Promise<Room[]> {
+  static async getRooms(filters: { matchId?: number; sport?: string; region?: string } = {}): Promise<Room[]> {
     let query = `
-      SELECT r.*, m.home_team, m.away_team, m.match_date, m.sport, m.location,
+      SELECT r.*, m.home_team, m.away_team, m.match_date, m.sport, m.location as match_location,
              (SELECT COUNT(*) FROM user_rooms ur WHERE ur.room_id = r.id AND ur.status = 'JOINED') as current_count
       FROM rooms r
       JOIN matches m ON r.match_id = m.id
@@ -25,6 +25,11 @@ export class RoomService {
     if (filters.sport && filters.sport !== "ALL") {
       query += ` AND m.sport = ?`;
       params.push(filters.sport.toUpperCase());
+    }
+
+    if (filters.region && filters.region !== "ALL") {
+      query += ` AND r.region = ?`;
+      params.push(filters.region);
     }
 
     query += ` ORDER BY r.created_at DESC LIMIT 50`;
@@ -45,14 +50,19 @@ export class RoomService {
   static async getPopularRooms(limit: number = 5): Promise<Room[]> {
     const query = `
       SELECT r.*, m.home_team, m.away_team, m.match_date, m.sport, m.location,
-             (SELECT COUNT(*) FROM user_rooms ur WHERE ur.room_id = r.id AND ur.status = 'JOINED') as current_count
+             (SELECT COUNT(*) FROM user_rooms ur WHERE ur.room_id = r.id AND ur.status = 'JOINED') as current_count,
+             (SELECT COUNT(*) 
+              FROM user_rooms ur 
+              WHERE ur.room_id = r.id 
+                AND ur.status IN ('PENDING', 'JOINED', 'LEFT', 'KICKED')
+             ) as interaction_count
       FROM rooms r
       JOIN matches m ON r.match_id = m.id
       WHERE r.deleted_at IS NULL
         AND r.title != 'OFFICIAL_CHAT'
-        AND (r.status = 'OPEN' OR r.status = 'RECRUITING')
+        AND (r.status = 'OPEN' OR r.status = 'FULL')
         AND m.match_date >= NOW()
-      ORDER BY current_count DESC, r.created_at DESC
+      ORDER BY interaction_count DESC, current_count DESC, r.created_at DESC
       LIMIT ?
     `;
 
@@ -136,33 +146,124 @@ export class RoomService {
     };
   }
   /**
-   * 사용자 승인 (status = 'JOINED')
+   * 사용자 승인 (status = 'JOINED') - 자동 상태 업데이트 포함
    */
   static async approveUser(roomId: number, userId: number): Promise<void> {
-    await pool.query(
-      "UPDATE user_rooms SET status = 'JOINED', decided_at = NOW(), joined_at = NOW() WHERE user_id = ? AND room_id = ?",
-      [userId, roomId]
-    );
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // 1. Check Capacity FIRST
+      const [rows] = await connection.query<RowDataPacket[]>(
+        `SELECT r.max_count, (SELECT COUNT(*) FROM user_rooms WHERE room_id = r.id AND status = 'JOINED') as current_count 
+         FROM rooms r WHERE r.id = ? FOR UPDATE`,
+        [roomId]
+      );
+
+      if (rows.length > 0) {
+        const { max_count, current_count } = rows[0];
+        if (current_count >= max_count) {
+          throw new Error("ROOM_FULL");
+        }
+      }
+
+      // 2. Approve User
+      await connection.query(
+        "UPDATE user_rooms SET status = 'JOINED', decided_at = NOW(), joined_at = NOW() WHERE user_id = ? AND room_id = ?",
+        [userId, roomId]
+      );
+
+      // 3. Re-Check & Update Room Status to FULL if it just became full
+      // We increased count by 1 effectively.
+      if (rows.length > 0) {
+        const { max_count, current_count } = rows[0];
+        // current_count was reading BEFORE update. New count is current_count + 1
+        if (current_count + 1 >= max_count) {
+          await connection.query("UPDATE rooms SET status = 'FULL' WHERE id = ? AND status = 'OPEN'", [roomId]);
+        }
+      }
+
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
   }
 
   /**
-   * 사용자 강퇴 (status = 'KICKED')
+   * 사용자 강퇴 (status = 'KICKED') - 자동 상태 업데이트 포함
    */
   static async kickUser(roomId: number, userId: number): Promise<void> {
-    await pool.query(
-      "UPDATE user_rooms SET status = 'KICKED', decided_at = NOW(), left_at = NOW() WHERE user_id = ? AND room_id = ?",
-      [userId, roomId]
-    );
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      await connection.query(
+        "UPDATE user_rooms SET status = 'KICKED', decided_at = NOW(), left_at = NOW() WHERE user_id = ? AND room_id = ?",
+        [userId, roomId]
+      );
+
+      // Check if room should be OPEN again
+      // We don't perform extensive check here for MVP, but logically if it was FULL it might become OPEN.
+      // Let's safe-guard: if count < max, set OPEN if currently FULL.
+      const [rows] = await connection.query<RowDataPacket[]>(
+        `SELECT r.max_count, r.status, (SELECT COUNT(*) FROM user_rooms WHERE room_id = r.id AND status = 'JOINED') as current_count 
+        FROM rooms r WHERE r.id = ? FOR UPDATE`,
+        [roomId]
+      );
+
+      if (rows.length > 0) {
+        const { max_count, current_count, status } = rows[0];
+        if (status === "FULL" && current_count < max_count) {
+          await connection.query("UPDATE rooms SET status = 'OPEN' WHERE id = ?", [roomId]);
+        }
+      }
+
+      await connection.commit();
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
   }
 
   /**
    * 방 나가기 (status = 'LEFT')
    */
   static async leaveRoom(roomId: number, userId: number): Promise<void> {
-    await pool.query("UPDATE user_rooms SET status = 'LEFT', left_at = NOW() WHERE user_id = ? AND room_id = ?", [
-      userId,
-      roomId,
-    ]);
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      await connection.query(
+        "UPDATE user_rooms SET status = 'LEFT', left_at = NOW() WHERE user_id = ? AND room_id = ?",
+        [userId, roomId]
+      );
+
+      // Check Capacity & Update to OPEN if needed
+      const [rows] = await connection.query<RowDataPacket[]>(
+        `SELECT r.max_count, r.status, (SELECT COUNT(*) FROM user_rooms WHERE room_id = r.id AND status = 'JOINED') as current_count 
+         FROM rooms r WHERE r.id = ? FOR UPDATE`,
+        [roomId]
+      );
+
+      if (rows.length > 0) {
+        const { max_count, current_count, status } = rows[0];
+        if (status === "FULL" && current_count < max_count) {
+          await connection.query("UPDATE rooms SET status = 'OPEN' WHERE id = ?", [roomId]);
+        }
+      }
+
+      await connection.commit();
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
   }
 
   /**
@@ -170,6 +271,13 @@ export class RoomService {
    */
   static async closeRoom(roomId: number): Promise<void> {
     await pool.query("UPDATE rooms SET status = 'CLOSED' WHERE id = ?", [roomId]);
+  }
+
+  /**
+   * 방 삭제 (status = 'DELETED')
+   */
+  static async deleteRoom(roomId: number): Promise<void> {
+    await pool.query("UPDATE rooms SET status = 'DELETED', deleted_at = NOW() WHERE id = ?", [roomId]);
   }
 
   /**

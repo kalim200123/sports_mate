@@ -140,7 +140,7 @@ export default async function RoomsPage({ searchParams }: RoomsPageProps) {
                       <span>
                         📅 {format(new Date(room.match_date || new Date()), "MM.dd(EEE) HH:mm", { locale: ko })}
                       </span>
-                      <span>📍 {room.location}</span>
+                      <span>📍 {room.region || "지역 미정"}</span>
                     </div>
                   </div>
                 </div>

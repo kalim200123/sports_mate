@@ -61,6 +61,7 @@ export class ChatService {
         m.room_id, 
         m.user_id, 
         m.content, 
+        m.type,
         m.created_at,
         u.nickname,
         u.profile_image_url
@@ -78,6 +79,7 @@ export class ChatService {
       room_id: row.room_id,
       user_id: row.user_id,
       content: row.content,
+      type: row.type,
       created_at: row.created_at,
       nickname: row.nickname,
       avatar_url: row.profile_image_url || getAvatarUrl(0),

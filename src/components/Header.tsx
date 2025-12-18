@@ -34,12 +34,33 @@ export default function Header() {
             >
               홈
             </Link>
-            <Link
-              href="/schedule"
-              className="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors"
-            >
-              경기일정
-            </Link>
+            {/* Smart Schedule Link & Dropdown */}
+            <div className="relative group h-full flex items-center">
+              <Link
+                href={user?.my_team?.includes("(농구)") ? "/schedule?sport=BASKETBALL" : "/schedule?sport=VOLLEYBALL"}
+                className="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors h-full flex items-center"
+              >
+                경기일정
+              </Link>
+
+              {/* Dropdown */}
+              <div className="absolute top-[90%] left-1/2 -translate-x-1/2 w-32 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none group-hover:pointer-events-auto">
+                <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden py-1">
+                  <Link
+                    href="/schedule?sport=VOLLEYBALL"
+                    className="block px-4 py-2.5 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-blue-600 dark:hover:text-blue-400 font-medium whitespace-nowrap"
+                  >
+                    🏐 배구
+                  </Link>
+                  <Link
+                    href="/schedule?sport=BASKETBALL"
+                    className="block px-4 py-2.5 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-orange-600 dark:hover:text-orange-400 font-medium whitespace-nowrap"
+                  >
+                    🏀 농구
+                  </Link>
+                </div>
+              </div>
+            </div>
             <Link
               href="/rooms"
               className="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors"

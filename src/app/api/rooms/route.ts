@@ -55,9 +55,15 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const matchId = searchParams.get("match_id");
+    const sport = searchParams.get("sport");
+    const region = searchParams.get("region");
 
     // Controller: 요청 파싱 및 Service 호출
-    const rooms = await RoomService.getRooms(matchId ? Number(matchId) : undefined);
+    const rooms = await RoomService.getRooms({
+      matchId: matchId ? Number(matchId) : undefined,
+      sport: sport || undefined,
+      region: region || undefined,
+    });
 
     // Controller: 응답 포맷팅
     return NextResponse.json({

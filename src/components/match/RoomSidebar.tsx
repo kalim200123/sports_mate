@@ -1,7 +1,6 @@
-"use client";
-
 import Image from "next/image";
 import { useState } from "react";
+import UserModal from "../user/UserModal";
 
 interface User {
   userId?: number;
@@ -17,9 +16,8 @@ interface RoomSidebarProps {
   isHost: boolean;
   hostId?: number;
   currentUserId?: number;
-  noticeContent: string;
+  content: string;
   roomStatus: string;
-  onUpdateNotice: (text: string) => void;
   onKick: (userId: number) => void;
   onApprove: (userId: number) => void;
   onLeave: () => void;
@@ -34,24 +32,19 @@ export default function RoomSidebar({
   isHost,
   hostId,
   currentUserId,
-  noticeContent,
+  content,
   roomStatus,
-  onUpdateNotice,
   onKick,
   onApprove,
   onLeave,
   onCloseRecruitment,
 }: RoomSidebarProps) {
-  const [notice, setNotice] = useState(noticeContent);
-  const [isEditingNotice, setIsEditingNotice] = useState(false);
-
-  const handleSaveNotice = () => {
-    onUpdateNotice(notice);
-    setIsEditingNotice(false);
-  };
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   return (
     <>
+      <UserModal userId={selectedUserId} onClose={() => setSelectedUserId(null)} />
+
       {/* Backdrop */}
       {isOpen && <div className="absolute inset-0 bg-black/50 z-40 transition-opacity" onClick={onClose} />}
 
@@ -80,32 +73,14 @@ export default function RoomSidebar({
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {/* 1. Notice */}
+          {/* 1. Room Introduction */}
           <section>
             <div className="flex justify-between items-center mb-2">
-              <h3 className="font-bold text-sm text-zinc-500">📢 공지사항</h3>
-              {isHost && (
-                <button
-                  onClick={() => (isEditingNotice ? handleSaveNotice() : setIsEditingNotice(true))}
-                  className="text-xs text-blue-600 font-medium hover:underline"
-                >
-                  {isEditingNotice ? "저장" : "수정"}
-                </button>
-              )}
+              <h3 className="font-bold text-sm text-zinc-500">📝 방 소개</h3>
             </div>
-            {isEditingNotice ? (
-              <textarea
-                value={notice}
-                onChange={(e) => setNotice(e.target.value)}
-                className="w-full p-2 text-sm border rounded-lg bg-zinc-50 dark:bg-zinc-800 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={4}
-                placeholder="공지사항을 입력하세요..."
-              />
-            ) : (
-              <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg text-sm whitespace-pre-wrap min-h-[80px] text-zinc-700 dark:text-zinc-300">
-                {notice || "등록된 공지사항이 없습니다."}
-              </div>
-            )}
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg text-sm whitespace-pre-wrap min-h-[80px] text-zinc-700 dark:text-zinc-300">
+              {content || "등록된 소개글이 없습니다."}
+            </div>
           </section>
 
           {/* 2. Pending Users (Host Only) */}
@@ -118,7 +93,10 @@ export default function RoomSidebar({
                     key={user.userId || i}
                     className="flex justify-between items-center p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg"
                   >
-                    <div className="flex items-center gap-2">
+                    <div
+                      className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => user.userId && setSelectedUserId(user.userId)}
+                    >
                       <div className="w-8 h-8 rounded-full bg-zinc-200 overflow-hidden">
                         {user.avatar_url ? (
                           <Image src={user.avatar_url} alt={user.nickname} width={32} height={32} />
@@ -146,7 +124,10 @@ export default function RoomSidebar({
             <ul className="space-y-3">
               {joinedUsers.map((user, i) => (
                 <li key={user.userId || i} className="flex justify-between items-center">
-                  <div className="flex items-center gap-3">
+                  <div
+                    className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => user.userId && setSelectedUserId(user.userId)}
+                  >
                     <div className="w-9 h-9 rounded-full bg-zinc-200 overflow-hidden relative">
                       {/* Host Badge */}
                       {user.userId === hostId && (
@@ -202,7 +183,7 @@ export default function RoomSidebar({
             onClick={onLeave}
             className="w-full py-3 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-xl text-sm font-bold hover:bg-red-200 transition-colors"
           >
-            방 나가기
+            {isHost ? "방 삭제하고 나가기" : "방 나가기"}
           </button>
         </div>
       </div>

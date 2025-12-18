@@ -60,7 +60,9 @@ export default function MatchDetailContent({ matchId }: MatchDetailContentProps)
           </button>
         </div>
 
-        <div className="flex-1 min-h-[500px]">{activeTab === "MATCHING" ? <MatchingRoomList /> : ChatComponent}</div>
+        <div className="flex-1 min-h-[500px]">
+          {activeTab === "MATCHING" ? <MatchingRoomList matchId={matchId} /> : ChatComponent}
+        </div>
       </div>
     </div>
   );

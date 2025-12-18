@@ -1,7 +1,7 @@
-"use client";
-
+import { REGIONS } from "@/lib/constants";
+import { useUserStore } from "@/store/use-user-store";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface CreateRoomModalProps {
   isOpen: boolean;
@@ -11,20 +11,27 @@ interface CreateRoomModalProps {
 
 export default function CreateRoomModal({ isOpen, onClose, matchId }: CreateRoomModalProps) {
   const router = useRouter();
+  const { user } = useUserStore();
 
   const [formData, setFormData] = useState<{
     title: string;
     content: string;
-    location: string;
+    region: string;
     ticket_status: "RESERVED" | "NOT_RESERVED";
     max_count: number;
   }>({
     title: "",
     content: "",
-    location: "",
+    region: "",
     ticket_status: "NOT_RESERVED",
     max_count: 4,
   });
+
+  useEffect(() => {
+    if (isOpen && user?.region) {
+      setFormData((prev) => ({ ...prev, region: user.region! }));
+    }
+  }, [isOpen, user]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -35,15 +42,17 @@ export default function CreateRoomModal({ isOpen, onClose, matchId }: CreateRoom
     setIsSubmitting(true);
 
     try {
-      // TODO: Replace with actual logged-in user ID
-      const HOST_ID = 1;
+      if (!user) {
+        alert("로그인이 필요합니다.");
+        return;
+      }
 
       const response = await fetch("/api/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           match_id: matchId,
-          host_id: HOST_ID,
+          host_id: user.id,
           ...formData,
         }),
       });
@@ -91,24 +100,31 @@ export default function CreateRoomModal({ isOpen, onClose, matchId }: CreateRoom
               type="text"
               required
               maxLength={50}
-              placeholder="예: E구역 100블럭 직관하실 분!"
+              placeholder="예: 같이 예매하고 직관하실 분! (20대만😁)"
               className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-zinc-800 text-sm"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             />
           </div>
 
-          {/* Location (Merged) */}
+          {/* Region (Replaces Location) */}
           <div className="space-y-1.5">
-            <label className="block text-sm font-semibold text-zinc-900 dark:text-zinc-100">위치 (선택)</label>
-            <input
-              type="text"
-              maxLength={50}
-              placeholder="예: E구역 100블럭, 3루 응원석 등"
-              className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-zinc-800 text-sm"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-            />
+            <label className="block text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              지역 <span className="text-red-500">*</span>
+            </label>
+            <select
+              required
+              className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm"
+              value={formData.region}
+              onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+            >
+              <option value="">지역 선택</option>
+              {REGIONS.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Ticket Status & Max Count */}

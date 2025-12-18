@@ -22,7 +22,12 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
           hostId={room.host_id}
           initialJoinedUsers={room.joined_users}
           title={room.title}
-          roomInfo={{ ...room, content: room.content || "", location: room.location || undefined }}
+          roomInfo={{
+            ...room,
+            content: room.content || "",
+            notice: room.notice || undefined,
+            region: room.region || undefined,
+          }}
         />
       </div>
     </div>

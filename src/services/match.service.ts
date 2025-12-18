@@ -194,7 +194,7 @@ export class MatchService {
       WHERE (home_team = ? OR away_team = ?) 
     `;
 
-    const params: any[] = [pureName, pureName];
+    const params: (string | number)[] = [pureName, pureName];
 
     if (explicitSport) {
       query += ` AND sport = ? `;

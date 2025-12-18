@@ -1,6 +1,15 @@
 "use client";
 
-import { ALL_TEAMS, CHEERING_STYLES, TITLES } from "@/lib/constants";
+import {
+  ALL_TEAMS,
+  BASKETBALL_MEN_TEAMS,
+  BASKETBALL_WOMEN_TEAMS,
+  CHEERING_STYLES,
+  MEN_TEAMS,
+  REGIONS,
+  TITLES,
+  WOMEN_TEAMS,
+} from "@/lib/constants";
 import { getTeamEmblem } from "@/lib/utils";
 import { Match } from "@/services/match.service";
 import { useUserStore } from "@/store/use-user-store";
@@ -24,6 +33,46 @@ export default function ProfilePage() {
   const [teamMatches, setTeamMatches] = useState<Match[]>([]);
   const [isEditingTeam, setIsEditingTeam] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState(user?.my_team || "");
+
+  const [isEditingRegion, setIsEditingRegion] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState(user?.region || "");
+
+  const handleRegionSave = async () => {
+    if (!user) return;
+    updateProfile({ region: selectedRegion });
+    await fetch("/api/users/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nickname: user.nickname,
+        gender: user.gender,
+        region: selectedRegion,
+      }),
+    });
+    setIsEditingRegion(false);
+  };
+
+  const getScheduleLink = () => {
+    if (!user?.my_team) return "/schedule";
+
+    const team = user.my_team;
+    const pureTeam = team.replace(/\((배구|농구)\)/, "").trim();
+
+    if (BASKETBALL_MEN_TEAMS.includes(team)) {
+      return `/schedule?sport=BASKETBALL&gender=MEN&team=${pureTeam}`;
+    }
+    if (BASKETBALL_WOMEN_TEAMS.includes(team)) {
+      return `/schedule?sport=BASKETBALL&gender=WOMEN&team=${pureTeam}`;
+    }
+    if (MEN_TEAMS.includes(team)) {
+      return `/schedule?sport=VOLLEYBALL&gender=MEN&team=${pureTeam}`;
+    }
+    if (WOMEN_TEAMS.includes(team)) {
+      return `/schedule?sport=VOLLEYBALL&gender=WOMEN&team=${pureTeam}`;
+    }
+
+    return "/schedule";
+  };
 
   const [isEditingStyles, setIsEditingStyles] = useState(false);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
@@ -73,6 +122,9 @@ export default function ProfilePage() {
   // Fetch Data
   useEffect(() => {
     if (!user) return;
+
+    // 0. Sync Local State
+    if (user.region) setSelectedRegion(user.region);
 
     // 1. Fetch My Rooms
     const fetchRooms = async () => {
@@ -226,7 +278,7 @@ export default function ProfilePage() {
             {/* Background Pattern */}
             <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
               <svg width="150" height="150" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8 8-8z" />
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-8z" />
               </svg>
             </div>
 
@@ -262,7 +314,42 @@ export default function ProfilePage() {
                   />
                 </div>
                 <h2 className="text-2xl font-bold mb-1 text-center">{user.nickname}</h2>
-                <p className="text-red-100 text-sm font-mono opacity-80">{user.kakao_id || "@kakao_user"}</p>
+                <p className="text-red-100 text-sm font-mono opacity-80 mb-4">{user.kakao_id || "@kakao_user"}</p>
+
+                {/* Region Selector */}
+                <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                  <span className="text-xs text-red-100">활동 지역</span>
+                  {isEditingRegion ? (
+                    <div className="flex items-center gap-1">
+                      <select
+                        className="bg-white text-red-600 text-xs rounded px-1 py-0.5 outline-none"
+                        value={selectedRegion}
+                        onChange={(e) => setSelectedRegion(e.target.value)}
+                      >
+                        <option value="">선택</option>
+                        {REGIONS.map((r) => (
+                          <option key={r} value={r}>
+                            {r}
+                          </option>
+                        ))}
+                      </select>
+                      <button onClick={handleRegionSave} className="text-xs font-bold hover:text-red-200">
+                        ✅
+                      </button>
+                      <button onClick={() => setIsEditingRegion(false)} className="text-xs hover:text-red-200">
+                        ❌
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className="flex items-center gap-1 cursor-pointer group"
+                      onClick={() => setIsEditingRegion(true)}
+                    >
+                      <span className="text-sm font-bold">{user.region || "미설정"}</span>
+                      <span className="text-[10px] opacity-50 group-hover:opacity-100">✏️</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Right Column: Stats & Details */}
@@ -455,7 +542,7 @@ export default function ProfilePage() {
               <div className="h-full flex flex-col items-center justify-center text-zinc-400 gap-2">
                 <span className="text-2xl">💬</span>
                 <p>참여 중인 채팅방이 없습니다.</p>
-                <Link href="/" className="text-blue-500 text-sm hover:underline">
+                <Link href={getScheduleLink()} className="text-blue-500 text-sm hover:underline">
                   경기 보러가기
                 </Link>
               </div>
@@ -495,7 +582,7 @@ export default function ProfilePage() {
                               </span>
                             </div>
                           ) : (
-                            <span className="text-xs text-zinc-500">{room.location}</span>
+                            <span className="text-xs text-zinc-500">{room.region || "지역 미정"}</span>
                           )}
                         </div>
 

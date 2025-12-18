@@ -57,7 +57,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await RoomService.approveUser(roomId, userId);
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === "ROOM_FULL") {
+      return NextResponse.json({ success: false, error: "ROOM_FULL" }, { status: 400 });
+    }
     console.error("Failed to approve user:", error);
     return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
   }
