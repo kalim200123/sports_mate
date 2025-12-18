@@ -25,6 +25,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Sports Mate",
   description: "V-League Schedule & Match Results",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

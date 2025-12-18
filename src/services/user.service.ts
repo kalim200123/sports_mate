@@ -123,6 +123,11 @@ export class UserService {
       values.push(data.title);
     }
 
+    if (data.region !== undefined) {
+      fields.push("region = ?");
+      values.push(data.region);
+    }
+
     const query = `UPDATE users SET ${fields.join(", ")} WHERE id = ?`;
     values.push(id);
 

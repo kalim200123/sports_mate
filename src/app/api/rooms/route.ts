@@ -57,12 +57,16 @@ export async function GET(request: Request) {
     const matchId = searchParams.get("match_id");
     const sport = searchParams.get("sport");
     const region = searchParams.get("region");
+    const status = searchParams.get("status"); // RECRUITING or ALL
+    const includePast = searchParams.get("includePast") === "true";
 
     // Controller: 요청 파싱 및 Service 호출
     const rooms = await RoomService.getRooms({
       matchId: matchId ? Number(matchId) : undefined,
       sport: sport || undefined,
       region: region || undefined,
+      status: (status as "RECRUITING" | "ALL") || undefined,
+      includePast,
     });
 
     // Controller: 응답 포맷팅

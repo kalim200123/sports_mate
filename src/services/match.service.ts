@@ -83,8 +83,10 @@ export class MatchService {
 
       // 팀 필터
       if (filters.team && filters.team !== "ALL") {
+        // Strip sport suffix for DB matching
+        const teamName = filters.team.replace("(배구)", "").replace("(농구)", "");
         conditions.push(`(home_team = ? OR away_team = ?)`);
-        params.push(filters.team, filters.team);
+        params.push(teamName, teamName);
       }
 
       // 날짜/월 필터

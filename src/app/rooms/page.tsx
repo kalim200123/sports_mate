@@ -6,18 +6,34 @@ import { ko } from "date-fns/locale";
 import Image from "next/image";
 import Link from "next/link";
 
+import RoomFilterBar from "./_components/RoomFilterBar";
+
 // Optional: Force dynamic refetch if needed, though searchParams usually triggers it in server components.
 export const dynamic = "force-dynamic";
 
 interface RoomsPageProps {
-  searchParams: Promise<{ sport?: string }>;
+  searchParams: Promise<{
+    sport?: string;
+    region?: string;
+    status?: "RECRUITING" | "ALL";
+    includePast?: string;
+  }>;
 }
 
 export default async function RoomsPage({ searchParams }: RoomsPageProps) {
   const params = await searchParams; // Next.js 15 requires awaiting searchParams
-  const sport = params.sport || "ALL"; // ALL, VOLLEYBALL, BASKETBALL
 
-  const rooms = await RoomService.getRooms({ sport });
+  const sport = params.sport || "ALL";
+  const region = params.region || "ALL";
+  const status = (params.status as "RECRUITING" | "ALL") || "ALL";
+  const includePast = params.includePast === "true"; // Default to false if missing
+
+  const rooms = await RoomService.getRooms({
+    sport,
+    region,
+    status,
+    includePast,
+  });
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pb-20">
@@ -31,39 +47,8 @@ export default async function RoomsPage({ searchParams }: RoomsPageProps) {
           <div className="w-8" /> {/* Placeholder for balance */}
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex w-full border-t border-zinc-100 dark:border-zinc-800">
-          <Link
-            href="/rooms?sport=ALL"
-            className={`flex-1 py-3 text-center text-sm font-bold border-b-2 transition-colors ${
-              sport === "ALL"
-                ? "border-black dark:border-white text-black dark:text-white"
-                : "border-transparent text-zinc-400 hover:text-zinc-600"
-            }`}
-          >
-            전체
-          </Link>
-          <Link
-            href="/rooms?sport=VOLLEYBALL"
-            className={`flex-1 py-3 text-center text-sm font-bold border-b-2 transition-colors ${
-              sport === "VOLLEYBALL"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-zinc-400 hover:text-zinc-600"
-            }`}
-          >
-            배구 🏐
-          </Link>
-          <Link
-            href="/rooms?sport=BASKETBALL"
-            className={`flex-1 py-3 text-center text-sm font-bold border-b-2 transition-colors ${
-              sport === "BASKETBALL"
-                ? "border-orange-500 text-orange-500"
-                : "border-transparent text-zinc-400 hover:text-zinc-600"
-            }`}
-          >
-            농구 🏀
-          </Link>
-        </div>
+        {/* Filter Bar */}
+        <RoomFilterBar />
       </header>
 
       {/* Content */}

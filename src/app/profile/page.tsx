@@ -142,7 +142,7 @@ export default function ProfilePage() {
     if (user.my_team) {
       const fetchSchedule = async () => {
         try {
-          const res = await fetch(`/api/matches/team?teamName=${encodeURIComponent(user.my_team!)}`);
+          const res = await fetch(`/api/matches/team?teamName=${encodeURIComponent(user.my_team!)}&includePast=false`);
           const data = await res.json();
           if (data.success) setTeamMatches(data.data);
         } catch (e) {
@@ -632,7 +632,7 @@ export default function ProfilePage() {
               href="/certification"
               className="text-xs font-bold text-red-500 bg-red-50 dark:bg-red-900/30 px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors flex items-center gap-1"
             >
-              📅 직관 인증 캘린더 보기 <span className="text-[10px]">▶</span>
+              📅 직관 인증 보기 <span className="text-[10px]">▶</span>
             </Link>
           )}
         </h3>

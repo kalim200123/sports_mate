@@ -107,8 +107,18 @@ export async function PUT(request: Request) {
     const body = await request.json();
 
     // 2. Validation (Controller Layer Responsibility)
-    const { nickname, gender, age_group, cheering_styles, my_team, profile_image_url, title, win_rate, total_visits } =
-      body;
+    const {
+      nickname,
+      gender,
+      age_group,
+      cheering_styles,
+      my_team,
+      profile_image_url,
+      title,
+      win_rate,
+      total_visits,
+      region,
+    } = body;
 
     // Optional: Add validation for new fields if needed
 
@@ -139,6 +149,7 @@ export async function PUT(request: Request) {
       title,
       win_rate,
       total_visits,
+      region,
     });
 
     return NextResponse.json({ success: true });

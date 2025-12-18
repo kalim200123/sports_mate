@@ -20,6 +20,7 @@ interface RoomSidebarProps {
   roomStatus: string;
   onKick: (userId: number) => void;
   onApprove: (userId: number) => void;
+  onReject: (userId: number) => void;
   onLeave: () => void;
   onCloseRecruitment: () => void;
 }
@@ -36,6 +37,7 @@ export default function RoomSidebar({
   roomStatus,
   onKick,
   onApprove,
+  onReject,
   onLeave,
   onCloseRecruitment,
 }: RoomSidebarProps) {
@@ -106,12 +108,22 @@ export default function RoomSidebar({
                       </div>
                       <span className="text-sm font-medium">{user.nickname}</span>
                     </div>
-                    <button
-                      onClick={() => user.userId && onApprove(user.userId)}
-                      className="px-3 py-1 bg-blue-600 text-white text-xs rounded-full hover:bg-blue-700"
-                    >
-                      승인
-                    </button>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => user.userId && onApprove(user.userId)}
+                        className="px-3 py-1 bg-green-600 text-white text-xs rounded-full hover:bg-green-700 transition-colors"
+                        title="승인"
+                      >
+                        ✅
+                      </button>
+                      <button
+                        onClick={() => user.userId && onReject(user.userId)}
+                        className="px-3 py-1 bg-red-600 text-white text-xs rounded-full hover:bg-red-700 transition-colors"
+                        title="거절"
+                      >
+                        ❌
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>

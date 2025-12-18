@@ -4,7 +4,7 @@ import { getTeamEmblem } from "@/lib/utils";
 import { addMonths, eachDayOfInterval, endOfMonth, format, isSameDay, startOfMonth, subMonths } from "date-fns";
 import { ko } from "date-fns/locale";
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 interface Match {
   id: number;
@@ -14,6 +14,7 @@ interface Match {
   home_score: number;
   away_score: number;
   status?: string;
+  location?: string;
 }
 
 interface Certification {
@@ -21,6 +22,7 @@ interface Certification {
   image_url: string;
   match_date: Date | string;
   status: "APPROVED" | "PENDING" | "REJECTED";
+  content?: string;
 }
 
 interface StampCalendarProps {
@@ -31,6 +33,17 @@ interface StampCalendarProps {
 
 export function StampCalendar({ myTeam, matches, certifications }: StampCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  // Modal State
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [selectedCert, setSelectedCert] = useState<Certification | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Form State
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [content, setContent] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Logic: Strip suffix for comparisons with DB Match Team Names
   const pureMyTeam = myTeam.replace(/\((배구|농구)\)/, "").trim();
@@ -43,7 +56,6 @@ export function StampCalendar({ myTeam, matches, certifications }: StampCalendar
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
 
   // Global Stats (Calculated from all available data, not just current month)
-
   const validMatches = matches.filter((m) => m.status === "ENDED" || m.status === "COMPLETED");
   const attendedMatches = validMatches.filter((m) =>
     certifications.some((c) => Number(c.match_id) === Number(m.id) && c.status === "APPROVED")
@@ -54,7 +66,6 @@ export function StampCalendar({ myTeam, matches, certifications }: StampCalendar
     const isHome = m.home_team.trim() === pureMyTeam;
     const isAway = m.away_team.trim() === pureMyTeam;
 
-    // Safety check
     if (!isHome && !isAway) return false;
 
     return isHome ? m.home_score > m.away_score : m.away_score > m.home_score;
@@ -70,6 +81,83 @@ export function StampCalendar({ myTeam, matches, certifications }: StampCalendar
       return isEnded && isAttended;
     })
     .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime());
+
+  // Interactions
+  const handleDayClick = (match: Match | undefined, cert: Certification | undefined) => {
+    if (!match) return;
+
+    setSelectedMatch(match);
+    setSelectedCert(cert || null);
+
+    // If cert exists, preload data
+    if (cert) {
+      setPreviewUrl(cert.image_url);
+      setContent(cert.content || "");
+    } else {
+      setPreviewUrl(null);
+      setContent("");
+    }
+
+    setIsModalOpen(true);
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate size (e.g. 5MB)
+      if (file.size > 5 * 1024 * 1024) return alert("이미지 크기는 5MB 이하여야 합니다.");
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      setUploading(true);
+      try {
+        const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+        const uploadData = await uploadRes.json();
+        if (uploadData.success) {
+          setPreviewUrl(uploadData.url);
+        } else {
+          alert("이미지 업로드 실패: " + uploadData.error);
+        }
+      } catch (err) {
+        console.error(err);
+        alert("업로드 중 오류가 발생했습니다.");
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedMatch) return;
+    if (!previewUrl) return alert("직관 인증 사진을 올려주세요!");
+
+    setUploading(true);
+    try {
+      const res = await fetch(`/api/matches/${selectedMatch.id}/auth`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageUrl: previewUrl,
+          content: content,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("직관 인증이 요청되었습니다.\n관리자 승인 후 스탬프가 발급됩니다.");
+        setIsModalOpen(false);
+        // Page reload to refresh data implies we should use router.refresh() or passed refetch function
+        window.location.reload();
+      } else {
+        alert("요청 실패: " + data.error);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("오류가 발생했습니다.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-full">
@@ -123,7 +211,10 @@ export function StampCalendar({ myTeam, matches, certifications }: StampCalendar
 
           {days.map((day) => {
             const dayMatch = matches.find((m) => isSameDay(new Date(m.match_date), day));
-            const cert = certifications.find((c) => isSameDay(new Date(c.match_date), day) && c.status === "APPROVED");
+            // Check for ANY cert (APPROVED or PENDING) to show status
+            const cert = certifications.find((c) => isSameDay(new Date(c.match_date), day));
+            const isApproved = cert?.status === "APPROVED";
+            const isPending = cert?.status === "PENDING";
 
             let result = "NONE";
             let resultText = "";
@@ -139,13 +230,14 @@ export function StampCalendar({ myTeam, matches, certifications }: StampCalendar
             return (
               <div
                 key={day.toISOString()}
+                onClick={() => handleDayClick(dayMatch, cert)}
                 className={`aspect-square rounded-lg border relative flex flex-col items-center justify-start py-1 overflow-hidden transition-all
                   ${
                     isSameDay(day, new Date())
                       ? "bg-blue-50/50 border-blue-200"
                       : "bg-transparent border-zinc-50 dark:border-zinc-800"
                   }
-                  ${dayMatch ? "hover:border-red-200 cursor-default" : ""}
+                  ${dayMatch ? "hover:border-red-400 cursor-pointer hover:bg-red-50/10" : ""}
                 `}
               >
                 <span
@@ -157,9 +249,14 @@ export function StampCalendar({ myTeam, matches, certifications }: StampCalendar
                 </span>
 
                 {dayMatch && (
-                  <div className="flex flex-col items-center justify-center w-full h-full pb-3 gap-0.5 z-0">
-                    {/* Opponent Logo - Bigger */}
-                    <div className="w-6 h-6 md:w-8 md:h-8 relative opacity-60">
+                  <div className="flex flex-col items-center justify-center w-full h-full pb-1 gap-1 relative z-0">
+                    {/* Opponent Logo - Larger and Faded Background Effect */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-10">
+                      {/* Optionally add a very large faded logo here if desired, but user just said "fill the cell" */}
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="w-10 h-10 md:w-14 md:h-14 relative opacity-80">
                       <Image
                         src={getTeamEmblem(
                           dayMatch.home_team.trim() === pureMyTeam ? dayMatch.away_team : dayMatch.home_team
@@ -169,32 +266,36 @@ export function StampCalendar({ myTeam, matches, certifications }: StampCalendar
                         className="object-contain"
                       />
                     </div>
-                    {/* Result Text - Bigger */}
-                    <div className="flex flex-col items-center leading-none">
+
+                    {/* Result or Time - Larger Text */}
+                    <div className="flex flex-col items-center leading-none z-10 w-full">
+                      {/* If pending, show Waiting icon */}
+                      {isPending && <span className="text-[9px] text-orange-500 font-bold mb-0.5">심사중</span>}
+
                       <span
-                        className={`text-[10px] md:text-xs font-bold leading-tight ${
+                        className={`text-xs md:text-sm font-black leading-tight ${
                           result === "WIN" ? "text-red-500" : result === "LOSE" ? "text-zinc-400" : "text-zinc-800"
                         }`}
                       >
                         {result === "WIN"
-                          ? "승"
+                          ? "WIN"
                           : result === "LOSE"
-                          ? "패"
+                          ? "LOSE"
                           : format(new Date(dayMatch.match_date), "HH:mm")}
                       </span>
                       {(result === "WIN" || result === "LOSE") && (
-                        <span className="text-[8px] md:text-[9px] text-zinc-500 font-medium mt-0.5">{resultText}</span>
+                        <span className="text-[10px] md:text-xs text-zinc-500 font-bold mt-0.5">{resultText}</span>
                       )}
                     </div>
                   </div>
                 )}
 
-                {/* Stamp Overlay - Smaller */}
-                {cert && (
+                {/* Stamp Overlay (Approved Only) - Larger */}
+                {isApproved && (
                   <div className="absolute inset-0 flex items-center justify-center bg-white/20 dark:bg-black/10 backdrop-blur-[0px] rounded-lg animate-in zoom-in duration-300 z-10 pointer-events-none">
-                    <div className="relative w-8 h-8 md:w-10 md:h-10 transform rotate-[-12deg] drop-shadow-md opacity-80">
-                      <div className="absolute inset-0 border-[3px] border-red-600 rounded-full" />
-                      <Image src={getTeamEmblem(myTeam)} alt="Stamp" fill className="object-contain p-0.5" />
+                    <div className="relative w-12 h-12 md:w-16 md:h-16 transform rotate-[-12deg] drop-shadow-lg opacity-90">
+                      <div className="absolute inset-0 border-[4px] border-red-600 rounded-full" />
+                      <Image src={getTeamEmblem(myTeam)} alt="Stamp" fill className="object-contain p-1" />
                     </div>
                   </div>
                 )}
@@ -233,6 +334,7 @@ export function StampCalendar({ myTeam, matches, certifications }: StampCalendar
             </h4>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-hide">
+            {/* List Logic Same as before */}
             {myAttendedHistory.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-zinc-400 text-xs">
                 인증된 직관 기록이 없습니다.
@@ -244,18 +346,15 @@ export function StampCalendar({ myTeam, matches, certifications }: StampCalendar
                   const isHome = match.home_team.trim() === pureMyTeam;
                   const myScore = isHome ? match.home_score : match.away_score;
                   const opScore = isHome ? match.away_score : match.home_score;
-
                   if (myScore > opScore) result = "WIN";
                   else if (myScore < opScore) result = "LOSE";
                 }
-
                 return (
                   <div
                     key={match.id}
                     className="flex items-center justify-between p-3 bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700/50 rounded-2xl hover:border-red-100 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      {/* Win/Loss Badge */}
                       <div
                         className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black shadow-sm ${
                           result === "WIN"
@@ -275,14 +374,6 @@ export function StampCalendar({ myTeam, matches, certifications }: StampCalendar
                           <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                             vs {match.home_team === pureMyTeam ? match.away_team : match.home_team}
                           </span>
-                          <div className="relative w-4 h-4 rounded-full overflow-hidden border border-zinc-100">
-                            <Image
-                              src={getTeamEmblem(match.home_team === pureMyTeam ? match.away_team : match.home_team)}
-                              alt="op"
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -293,6 +384,94 @@ export function StampCalendar({ myTeam, matches, certifications }: StampCalendar
           </div>
         </div>
       </div>
+
+      {/* Check-in Modal */}
+      {isModalOpen && selectedMatch && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600"
+              onClick={() => setIsModalOpen(false)}
+            >
+              ✕
+            </button>
+
+            <h3 className="text-lg font-bold mb-1 text-center">직관 기록장 ✏️</h3>
+            <p className="text-xs text-zinc-500 text-center mb-6">
+              {format(new Date(selectedMatch.match_date), "MM월 dd일")} vs{" "}
+              {selectedMatch.home_team === pureMyTeam ? selectedMatch.away_team : selectedMatch.home_team}
+            </p>
+
+            {/* Photo Upload Area */}
+            <div
+              className="w-full aspect-video bg-zinc-100 dark:bg-zinc-800 rounded-xl mb-4 relative overflow-hidden flex items-center justify-center border-2 border-dashed border-zinc-200 dark:border-zinc-700 hover:border-blue-400 cursor-pointer transition-colors group"
+              onClick={() => !selectedCert && fileInputRef.current?.click()}
+            >
+              {previewUrl ? (
+                <Image src={previewUrl} alt="preview" fill className="object-cover" />
+              ) : (
+                <div className="text-center text-zinc-400 group-hover:text-blue-500 transition-colors">
+                  <span className="text-2xl block mb-1">📸</span>
+                  <span className="text-xs">인증샷 올리기</span>
+                </div>
+              )}
+              {!selectedCert && (
+                <input type="file" ref={fileInputRef} hidden accept="image/*" onChange={handleFileSelect} />
+              )}
+            </div>
+
+            {/* Content Area */}
+            <div className="mb-4">
+              <textarea
+                className="w-full h-24 bg-zinc-50 dark:bg-zinc-800 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 resize-none"
+                placeholder="오늘 경기는 어땠나요? 간단한 기록을 남겨보세요! (선수 플레이 감상, 경기장 분위기 등)"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                readOnly={!!selectedCert && selectedCert.status !== "REJECTED"} // Editable only if not submitted or rejected? User implies viewing record.
+              />
+            </div>
+
+            {/* Status or Buttons */}
+            {selectedCert ? (
+              <div className="w-full text-center">
+                {selectedCert.status === "APPROVED" && (
+                  <div className="py-3 bg-green-50 text-green-600 rounded-xl font-bold text-sm">
+                    ✅ 인증 완료된 기록입니다
+                  </div>
+                )}
+                {selectedCert.status === "PENDING" && (
+                  <div className="py-3 bg-yellow-50 text-yellow-600 rounded-xl font-bold text-sm">
+                    ⏳ 관리자 승인 대기중입니다
+                  </div>
+                )}
+                {selectedCert.status === "REJECTED" && (
+                  <button
+                    onClick={handleSubmit}
+                    disabled={uploading}
+                    className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors"
+                  >
+                    {uploading ? "업로드 중..." : "다시 제출하기"}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={uploading}
+                className="w-full py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-500/30"
+              >
+                {uploading ? "기록 저장 중..." : "기록 저장하기"}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

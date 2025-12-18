@@ -7,7 +7,15 @@ export class RoomService {
    * 모든 방 목록 조회 (필터링 지원)
    * 비즈니스 로직은 여기서 처리 (DB 조회, 데이터 가공 등)
    */
-  static async getRooms(filters: { matchId?: number; sport?: string; region?: string } = {}): Promise<Room[]> {
+  static async getRooms(
+    filters: {
+      matchId?: number;
+      sport?: string;
+      region?: string;
+      status?: "RECRUITING" | "ALL";
+      includePast?: boolean;
+    } = {}
+  ): Promise<Room[]> {
     let query = `
       SELECT r.*, m.home_team, m.away_team, m.match_date, m.sport, m.location as match_location,
              (SELECT COUNT(*) FROM user_rooms ur WHERE ur.room_id = r.id AND ur.status = 'JOINED') as current_count
@@ -17,19 +25,36 @@ export class RoomService {
     `;
     const params: (string | number)[] = [];
 
+    // Match ID Filter
     if (filters.matchId) {
       query += ` AND r.match_id = ?`;
       params.push(filters.matchId);
     }
 
+    // Sport Filter
     if (filters.sport && filters.sport !== "ALL") {
       query += ` AND m.sport = ?`;
       params.push(filters.sport.toUpperCase());
     }
 
+    // Region Filter (Simple string match for now)
     if (filters.region && filters.region !== "ALL") {
       query += ` AND r.region = ?`;
       params.push(filters.region);
+    }
+
+    // Status Filter: 'RECRUITING' (OPEN) vs 'ALL' (OPEN + FULL), Exclude CLOSED
+    if (filters.status === "RECRUITING") {
+      query += ` AND r.status = 'OPEN'`;
+    } else {
+      // Show OPEN and FULL by default, Hide CLOSED/DELETED
+      query += ` AND r.status IN ('OPEN', 'FULL')`;
+    }
+
+    // Past Matches Filter
+    if (!filters.includePast) {
+      // Show matches that haven't ended yet (or recently ended within 4 hours)
+      query += ` AND m.match_date >= DATE_SUB(NOW(), INTERVAL 4 HOUR)`;
     }
 
     query += ` ORDER BY r.created_at DESC LIMIT 50`;

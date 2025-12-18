@@ -44,7 +44,25 @@ export const CHEERING_STYLES = [
   "사교적인 팬 🤝",
 ];
 
-export const REGIONS = ["서울", "경기", "인천", "강원", "충청", "전라", "경상", "제주"];
+export const REGIONS = [
+  "서울",
+  "경기",
+  "인천",
+  "강원",
+  "대전",
+  "세종",
+  "충남",
+  "충북",
+  "대구",
+  "경북",
+  "부산",
+  "울산",
+  "경남",
+  "광주",
+  "전남",
+  "전북",
+  "제주",
+];
 
 export const TITLES = [
   { id: "newbie", name: "신입 메이트", description: "가입 시 기본 제공", condition: "기본" },

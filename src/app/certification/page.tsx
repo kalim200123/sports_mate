@@ -100,9 +100,9 @@ export default function CertificationPage() {
             <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6 text-center border border-blue-100 dark:border-blue-800/30">
               <h3 className="font-bold text-blue-800 dark:text-blue-300 mb-2">💡 직관 인증하는 방법</h3>
               <p className="text-sm text-blue-600 dark:text-blue-400 leading-relaxed">
-                경기장에 방문한 사진을 찍고
+                캘린더 날짜를 클릭하여 직관 일기를 작성해보세요.
                 <br />
-                해당 경기 채팅방에서 <b>&apos;직관 인증&apos;</b> 버튼을 눌러주세요!
+                <b>인증샷</b>과 함께 기록을 남기면
                 <br />
                 관리자 승인 후 스탬프가 발급됩니다.
               </p>

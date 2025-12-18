@@ -19,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { id } = await params;
     const matchId = Number(id);
     const body = await req.json();
-    const { imageUrl } = body;
+    const { imageUrl, content } = body;
 
     if (!imageUrl) return NextResponse.json({ success: false, error: "Image required" }, { status: 400 });
 
@@ -27,6 +27,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       userId: user.id as number,
       matchId,
       imageUrl,
+      content,
     });
 
     return NextResponse.json({ success: true, message: "Auth requested" });

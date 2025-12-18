@@ -6,17 +6,28 @@ export class TicketService {
   /**
    * 직관 인증 요청 생성
    */
-  static async createAuth(data: { userId: number; matchId: number; imageUrl: string }): Promise<number> {
+  static async createAuth(data: {
+    userId: number;
+    matchId: number;
+    imageUrl: string;
+    content?: string;
+  }): Promise<number> {
     // Upsert logic: If exists, update image and set status to PENDING
     const query = `
-      INSERT INTO ticket_auths (user_id, match_id, image_url, status)
-      VALUES (?, ?, ?, 'PENDING')
+      INSERT INTO ticket_auths (user_id, match_id, image_url, status, content)
+      VALUES (?, ?, ?, 'PENDING', ?)
       ON DUPLICATE KEY UPDATE
       image_url = VALUES(image_url),
       status = 'PENDING',
+      content = VALUES(content),
       updated_at = CURRENT_TIMESTAMP
     `;
-    const [result] = await pool.query<ResultSetHeader>(query, [data.userId, data.matchId, data.imageUrl]);
+    const [result] = await pool.query<ResultSetHeader>(query, [
+      data.userId,
+      data.matchId,
+      data.imageUrl,
+      data.content || null,
+    ]);
     return result.insertId;
   }
 
@@ -140,6 +151,7 @@ export class TicketService {
       home_score: number;
       away_score: number;
       match_status: string;
+      content?: string;
     })[]
   > {
     const query = `
@@ -157,6 +169,7 @@ export class TicketService {
       home_score: number;
       away_score: number;
       match_status: string;
+      content?: string;
     })[];
   }
 

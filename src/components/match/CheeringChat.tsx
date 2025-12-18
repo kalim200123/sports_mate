@@ -251,6 +251,27 @@ export default function CheeringChat({ roomId, hostId, initialJoinedUsers, title
     }
   };
 
+  const handleReject = async (targetUserId: number) => {
+    if (!confirm("정말 거절하시겠습니까? (재신청 불가)")) return;
+    try {
+      const res = await fetch(`/api/rooms/${roomId}/reject`, {
+        method: "POST",
+        body: JSON.stringify({ userId: targetUserId }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (res.ok) {
+        setPendingUsers((prev) => prev.filter((u) => u.userId !== targetUserId));
+        alert("거절되었습니다.");
+      } else {
+        alert("거절 처리에 실패했습니다.");
+      }
+    } catch (e) {
+      console.error("Reject failed", e);
+      alert("오류가 발생했습니다.");
+    }
+  };
+
   const handleKick = async (targetUserId: number) => {
     if (!confirm("정말 강퇴하시겠습니까? (재입장 불가)")) return;
     try {
@@ -351,6 +372,17 @@ export default function CheeringChat({ roomId, hostId, initialJoinedUsers, title
     }
   };
 
+  // Auto-Join for Official Chat
+  useEffect(() => {
+    if (!isRoomMode && membershipStatus === "NONE" && user) {
+      const timer = setTimeout(() => {
+        handleApplyJoin();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRoomMode, membershipStatus, user]);
+
   if (membershipStatus === "LOADING") {
     return (
       <div className="flex items-center justify-center h-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
@@ -359,8 +391,8 @@ export default function CheeringChat({ roomId, hostId, initialJoinedUsers, title
     );
   }
 
-  // Room Entry Gate
-  if (membershipStatus === "NONE" && entryInfo) {
+  // Room Entry Gate (Only for User-Created Rooms)
+  if (isRoomMode && membershipStatus === "NONE" && entryInfo) {
     const isFull = entryInfo.currentCount >= entryInfo.maxCount;
     // Format Date: "12월 25일 (토) 14:00"
     const dateStr = format(new Date(entryInfo.matchInfo.matchDate), "M월 d일 (eee) HH:mm", { locale: ko });
@@ -420,8 +452,9 @@ export default function CheeringChat({ roomId, hostId, initialJoinedUsers, title
     );
   }
 
-  // Waiting Screen (PENDING)
-  if (membershipStatus === "PENDING") {
+  // Waiting Screen (PENDING) - Only for User-Created Rooms
+  // For Official Chat, we show the chat interface even if pending (optimistic) or while joining
+  if (isRoomMode && membershipStatus === "PENDING") {
     return (
       <div className="flex flex-col h-full bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden relative">
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6">
@@ -503,6 +536,7 @@ export default function CheeringChat({ roomId, hostId, initialJoinedUsers, title
           roomStatus={currentRoomStatus}
           onKick={handleKick}
           onApprove={handleApprove}
+          onReject={handleReject}
           onLeave={handleLeave} // Logic updated in handleLeave
           onCloseRecruitment={handleCloseRecruitment}
         />
@@ -718,7 +752,7 @@ export default function CheeringChat({ roomId, hostId, initialJoinedUsers, title
               user
                 ? joinStatus === "PENDING"
                   ? "승인 대기 중..."
-                  : "응원 메시지를 남겨보세요!"
+                  : "채팅 메시지를 남겨보세요!"
                 : "로그인이 필요합니다"
             }
             disabled={!user || joinStatus === "PENDING"}
