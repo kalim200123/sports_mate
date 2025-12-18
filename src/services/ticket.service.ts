@@ -130,6 +130,37 @@ export class TicketService {
   }
 
   /**
+   * 사용자 직관 인증 내역 조회 (캘린더용)
+   */
+  static async getCertifications(userId: number): Promise<
+    (TicketAuth & {
+      match_date: Date;
+      home_team: string;
+      away_team: string;
+      home_score: number;
+      away_score: number;
+      match_status: string;
+    })[]
+  > {
+    const query = `
+      SELECT ta.*, m.match_date, m.home_team, m.away_team, m.home_score, m.away_score, m.status as match_status
+      FROM ticket_auths ta
+      JOIN matches m ON ta.match_id = m.id
+      WHERE ta.user_id = ? AND ta.status = 'APPROVED'
+      ORDER BY m.match_date ASC
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [userId]);
+    return rows as (TicketAuth & {
+      match_date: Date;
+      home_team: string;
+      away_team: string;
+      home_score: number;
+      away_score: number;
+      match_status: string;
+    })[];
+  }
+
+  /**
    * 관리자: 인증 거절
    */
   static async rejectAuth(authId: number): Promise<void> {

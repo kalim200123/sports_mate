@@ -1,11 +1,17 @@
 import MatchCarousel from "@/components/match/MatchCarousel";
+import { PopularRoomCarousel } from "@/components/room/PopularRoomCarousel";
+import { UserRankingList } from "@/components/user/UserRankingList";
 import { MatchService } from "@/services/match.service";
+import { RoomService } from "@/services/room.service";
+import { UserService } from "@/services/user.service";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic"; // Ensure fresh data on every request
 
 export default async function Home() {
-  const matches = await MatchService.getUpcomingMatches(10);
+  const matches = await MatchService.getTodaysMatches();
+  const popularRooms = await RoomService.getPopularRooms(5);
+  const rankings = await UserService.getRankings(5);
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-zinc-950 font-sans pb-20">
@@ -62,32 +68,15 @@ export default async function Home() {
       {/* 3. Today's Matches Carousel */}
       <MatchCarousel matches={matches} title="🔥 오늘의 경기" />
 
-      {/* 4. Hot Live Rooms (Placeholder) */}
-      <section className="py-4 px-4 max-w-5xl mx-auto w-full">
-        <div className="flex justify-between items-center mb-4 px-1">
-          <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">💬 실시간 인기 응원방</h2>
-          <Link href="/rooms" className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300">
-            더보기 &gt;
-          </Link>
-        </div>
-
-        {/* Empty State for Dashboard MVP */}
-        <div className="bg-zinc-50 dark:bg-zinc-900 rounded-2xl p-8 text-center text-zinc-500 border border-dashed border-zinc-200 dark:border-zinc-800">
-          <p>현재 뜨거운 응원방이 없습니다.</p>
-          <p className="text-sm mt-1">곧 경기가 시작되면 응원방이 생길 거예요!</p>
-        </div>
+      {/* 4. Hot Live Rooms */}
+      <section className="py-4 max-w-5xl mx-auto w-full">
+        <PopularRoomCarousel rooms={popularRooms} />
       </section>
 
-      {/* 5. My Stats (Login Required Placeholder) */}
+      {/* 5. Win Rate Rankings */}
       <section className="py-4 px-4 max-w-5xl mx-auto w-full mb-10">
-        <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-4 px-1">👑 나의 직관 승률</h2>
-        <div className="bg-gradient-to-r from-zinc-800 to-zinc-900 text-white rounded-2xl p-6 shadow-lg">
-          <p className="text-lg font-bold mb-2">로그인이 필요해요</p>
-          <p className="text-zinc-400 text-sm mb-4">로그인하고 나의 직관 승률을 확인해보세요.</p>
-          <Link href="/login" className="px-4 py-2 bg-white text-black text-sm font-bold rounded-lg">
-            로그인하기
-          </Link>
-        </div>
+        <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-4 px-1">👑 직관 승률 랭킹</h2>
+        <UserRankingList users={rankings} />
       </section>
     </div>
   );

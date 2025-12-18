@@ -2,6 +2,7 @@ export type CheeringStyle = "#조용히집중" | "#열정응원" | "#촬영러" 
 
 export enum RoomStatus {
   OPEN = "OPEN",
+  RECRUITING = "RECRUITING",
   FULL = "FULL",
   CLOSED = "CLOSED",
   DELETED = "DELETED",
@@ -31,9 +32,8 @@ export interface User {
   cheering_styles: CheeringStyle[]; // JSON array
   my_team?: string | null;
   profile_image_url?: string | null;
-  // avatar_id: number; // Deprecated
   title?: string;
-  unlocked_titles?: { id: string; name: string }[]; // Derived field
+  unlocked_titles?: { id: string; name: string }[];
   win_rate?: number;
   total_visits?: number;
   win_count?: number;
@@ -59,7 +59,7 @@ export interface MatchInfo {
 export interface Room {
   id: number;
   match_id: number;
-  match_date?: Date;
+  match_date?: Date | string; // Allow match_date from join
   host_id: number;
   title: string;
   content: string | null;
@@ -67,9 +67,10 @@ export interface Room {
   ticket_status: "RESERVED" | "NOT_RESERVED";
   max_count: number;
   status: RoomStatus;
-  current_count?: number; // Add current_count
-  home_team?: string;
-  away_team?: string;
+  current_count?: number;
+  sport?: string; // Joined field
+  home_team?: string; // Joined field
+  away_team?: string; // Joined field
   created_at: Date;
   updated_at: Date;
   deleted_at?: Date | null;

@@ -182,4 +182,20 @@ export class UserService {
 
     return user;
   }
+  /**
+   * 승률 랭킹 조회 (최소 5경기 이상 인증한 유저 대상)
+   */
+  static async getRankings(limit: number = 5): Promise<User[]> {
+    const query = `
+      SELECT id, nickname, gender, age_group, profile_image_url, title, my_team,
+             win_rate, win_count, loss_count, total_visits
+      FROM users
+      WHERE deleted_at IS NULL
+        AND (win_count + loss_count) >= 5
+      ORDER BY win_rate DESC, win_count DESC, created_at ASC
+      LIMIT ?
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [limit]);
+    return rows as User[];
+  }
 }

@@ -34,6 +34,10 @@ export const getTeamColor = (teamName: string) => {
 };
 
 export function getTeamEmblem(teamName: string) {
+  // Disambiguation First
+  if (teamName.includes("정관장(농구)")) return "/teams/anyang_jkj.svg";
+  if (teamName.includes("정관장(배구)")) return "https://cdn.dev.kovo.co.kr/favicons/redsparks.svg";
+
   // Men
   if (teamName.includes("현대캐피탈")) return "https://cdn.dev.kovo.co.kr/favicons/skywalkers.svg";
   if (teamName.includes("대한항공")) return "https://cdn.dev.kovo.co.kr/favicons/jumbos.svg";

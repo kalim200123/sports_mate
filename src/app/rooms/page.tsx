@@ -1,5 +1,6 @@
 import { getTeamEmblem } from "@/lib/utils";
 import { RoomService } from "@/services/room.service";
+import { RoomStatus } from "@/types/db";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import Image from "next/image";
@@ -94,21 +95,21 @@ export default async function RoomsPage({ searchParams }: RoomsPageProps) {
                   <div className="flex justify-between items-start mb-3">
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                        (room as any).sport === "BASKETBALL"
+                        room.sport === "BASKETBALL"
                           ? "bg-orange-50 text-orange-600 border-orange-100"
                           : "bg-blue-50 text-blue-600 border-blue-100"
                       }`}
                     >
-                      {(room as any).sport === "BASKETBALL" ? "🏀 농구" : "🏐 배구"}
+                      {room.sport === "BASKETBALL" ? "🏀 농구" : "🏐 배구"}
                     </span>
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        room.status === "RECRUITING" || room.current_count < room.max_count
+                        room.status === RoomStatus.RECRUITING || (room.current_count || 0) < room.max_count
                           ? "bg-green-100 text-green-700"
                           : "bg-zinc-100 text-zinc-500"
                       }`}
                     >
-                      {room.current_count}/{room.max_count}명
+                      {room.current_count || 0}/{room.max_count}명
                     </span>
                   </div>
 
@@ -119,34 +120,27 @@ export default async function RoomsPage({ searchParams }: RoomsPageProps) {
 
                   {/* Match Info */}
                   <div className="mt-auto pt-3 border-t border-zinc-50 dark:border-zinc-800/50">
-                    <div className="flex items-center gap-2 mb-2">
-                      {/* Logos (Small) */}
-                      <div className="flex items-center -space-x-1">
-                        <div className="w-6 h-6 rounded-full bg-white border border-zinc-100 relative overflow-hidden">
-                          <Image
-                            src={getTeamEmblem((room as any).home_team)}
-                            alt="home"
-                            fill
-                            className="object-cover"
-                          />
+                    <div className="flex items-center justify-between text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-2 bg-zinc-50 dark:bg-zinc-800/50 p-2 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="relative w-6 h-6 rounded-full overflow-hidden border border-zinc-100 bg-white shadow-sm">
+                          <Image src={getTeamEmblem(room.home_team || "")} alt="home" fill className="object-cover" />
                         </div>
-                        <div className="w-6 h-6 rounded-full bg-white border border-zinc-100 relative overflow-hidden z-10">
-                          <Image
-                            src={getTeamEmblem((room as any).away_team)}
-                            alt="away"
-                            fill
-                            className="object-cover"
-                          />
+                        <span className="truncate max-w-[60px] md:max-w-none">{room.home_team}</span>
+                      </div>
+                      <span className="text-zinc-400 mx-1">vs</span>
+                      <div className="flex items-center gap-2">
+                        <span className="truncate max-w-[60px] md:max-w-none">{room.away_team}</span>
+                        <div className="relative w-6 h-6 rounded-full overflow-hidden border border-zinc-100 bg-white shadow-sm">
+                          <Image src={getTeamEmblem(room.away_team || "")} alt="away" fill className="object-cover" />
                         </div>
                       </div>
-                      <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                        {(room as any).home_team} vs {(room as any).away_team}
-                      </span>
                     </div>
 
                     <div className="flex items-center gap-2 text-xs text-zinc-500">
-                      <span>📅 {format(new Date((room as any).match_date), "MM.dd(EEE) HH:mm", { locale: ko })}</span>
-                      <span>📍 {(room as any).location}</span>
+                      <span>
+                        📅 {format(new Date(room.match_date || new Date()), "MM.dd(EEE) HH:mm", { locale: ko })}
+                      </span>
+                      <span>📍 {room.location}</span>
                     </div>
                   </div>
                 </div>

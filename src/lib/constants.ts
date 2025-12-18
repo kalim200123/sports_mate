@@ -3,7 +3,7 @@ export const MEN_TEAMS = ["대한항공", "현대캐피탈", "한국전력", "�
 export const WOMEN_TEAMS = [
   "흥국생명",
   "현대건설",
-  "정관장",
+  "정관장(배구)",
   "GS칼텍스",
   "IBK기업은행",
   "한국도로공사",
@@ -17,7 +17,7 @@ export const BASKETBALL_MEN_TEAMS = [
   "LG",
   "소노",
   "KCC",
-  "정관장",
+  "정관장(농구)",
   "KT",
   "한국가스공사",
   "현대모비스",

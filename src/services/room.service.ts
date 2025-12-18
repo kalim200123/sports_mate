@@ -39,6 +39,33 @@ export class RoomService {
   }
 
   /**
+   * 인기 응원방 조회 (메인 페이지용)
+   * 기준: 모집 중인 방, 경기 시간 지나지 않음, 참여자 수 많은 순
+   */
+  static async getPopularRooms(limit: number = 5): Promise<Room[]> {
+    const query = `
+      SELECT r.*, m.home_team, m.away_team, m.match_date, m.sport, m.location,
+             (SELECT COUNT(*) FROM user_rooms ur WHERE ur.room_id = r.id AND ur.status = 'JOINED') as current_count
+      FROM rooms r
+      JOIN matches m ON r.match_id = m.id
+      WHERE r.deleted_at IS NULL
+        AND r.title != 'OFFICIAL_CHAT'
+        AND (r.status = 'OPEN' OR r.status = 'RECRUITING')
+        AND m.match_date >= NOW()
+      ORDER BY current_count DESC, r.created_at DESC
+      LIMIT ?
+    `;
+
+    try {
+      const [rows] = await pool.query<RowDataPacket[]>(query, [limit]);
+      return rows as Room[];
+    } catch (error) {
+      console.error("Failed to fetch popular rooms:", error);
+      return []; // Silently fail for main page widgets
+    }
+  }
+
+  /**
    * 방 생성 (트랜잭션: 방 생성 + 방장 참여)
    */
   static async createRoom(data: Partial<Room> & { match_id: number; host_id: number }): Promise<number> {

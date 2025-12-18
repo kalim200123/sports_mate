@@ -33,7 +33,9 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const matches = await MatchService.getMatchesByTeam(teamName);
+    const includePast = searchParams.get("includePast") === "true";
+    console.log(`Fetching matches for ${teamName}, includePast: ${includePast}`);
+    const matches = await MatchService.getMatchesByTeam(teamName, includePast);
     return NextResponse.json({ success: true, data: matches });
   } catch (error) {
     console.error("Failed to fetch team matches:", error);

@@ -1,4 +1,11 @@
-import { BASKETBALL_MEN_TEAMS, BASKETBALL_WOMEN_TEAMS, MEN_TEAMS, WOMEN_TEAMS } from "@/lib/constants";
+import {
+  BASKETBALL_MEN_TEAMS,
+  BASKETBALL_TEAMS,
+  BASKETBALL_WOMEN_TEAMS,
+  MEN_TEAMS,
+  VOLLEYBALL_TEAMS,
+  WOMEN_TEAMS,
+} from "@/lib/constants";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 
@@ -125,6 +132,19 @@ export class MatchService {
     return this.getMatches({ date: dateStr });
   }
   /**
+   * 오늘 진행되는 경기 목록을 가져옵니다. (메인 페이지용)
+   */
+  static async getTodaysMatches(): Promise<Match[]> {
+    const query = `
+      SELECT * FROM matches 
+      WHERE match_date >= CURDATE() AND match_date < CURDATE() + INTERVAL 1 DAY
+      ORDER BY match_date ASC
+    `;
+    const [rows] = await pool.query<Match[]>(query);
+    return rows;
+  }
+
+  /**
    * 오늘 이후 예정된(혹은 진행중인) 경기를 가져옵니다. (메인 페이지용)
    */
   static async getUpcomingMatches(limit: number = 10): Promise<Match[]> {
@@ -139,16 +159,55 @@ export class MatchService {
   }
 
   /**
-   * 특정 팀의 경기 일정을 가져옵니다. (오늘 이후)
+   * 특정 팀의 경기 일정을 가져옵니다.
    */
-  static async getMatchesByTeam(teamName: string): Promise<Match[]> {
-    const query = `
+  static async getMatchesByTeam(teamName: string, includePast: boolean = false): Promise<Match[]> {
+    // 1. Resolve Explicit Sport from Suffix
+    let pureName = teamName;
+    let explicitSport = null;
+
+    if (teamName.includes("(배구)")) {
+      pureName = teamName.replace("(배구)", "");
+      explicitSport = "VOLLEYBALL";
+    } else if (teamName.includes("(농구)")) {
+      pureName = teamName.replace("(농구)", "");
+      explicitSport = "BASKETBALL";
+    }
+
+    // 2. Default Logic if no explicit sport (Legacy support or Pure Name)
+    if (!explicitSport) {
+      if (pureName === "정관장") {
+        explicitSport = "VOLLEYBALL"; // Hard Default for Legacy
+      } else {
+        // General Check
+        const isVolleyball = VOLLEYBALL_TEAMS.some((t) => t.replace("(배구)", "") === pureName);
+        const isBasketball = BASKETBALL_TEAMS.some((t) => t.replace("(농구)", "") === pureName);
+
+        if (isVolleyball && isBasketball) explicitSport = "VOLLEYBALL";
+        else if (isVolleyball) explicitSport = "VOLLEYBALL";
+        else if (isBasketball) explicitSport = "BASKETBALL";
+      }
+    }
+
+    let query = `
       SELECT * FROM matches 
       WHERE (home_team = ? OR away_team = ?) 
-      AND match_date >= CURDATE()
-      ORDER BY match_date ASC
     `;
-    const [rows] = await pool.query<Match[]>(query, [teamName, teamName]);
+
+    const params: any[] = [pureName, pureName];
+
+    if (explicitSport) {
+      query += ` AND sport = ? `;
+      params.push(explicitSport);
+    }
+
+    if (!includePast) {
+      query += ` AND match_date >= CURDATE() `;
+    }
+
+    query += ` ORDER BY match_date ASC `;
+
+    const [rows] = await pool.query<Match[]>(query, params);
     return rows;
   }
 }

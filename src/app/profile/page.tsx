@@ -1,6 +1,6 @@
 "use client";
 
-import { CHEERING_STYLES, MEN_TEAMS, TITLES, WOMEN_TEAMS } from "@/lib/constants";
+import { ALL_TEAMS, CHEERING_STYLES, TITLES } from "@/lib/constants";
 import { getTeamEmblem } from "@/lib/utils";
 import { Match } from "@/services/match.service";
 import { useUserStore } from "@/store/use-user-store";
@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 // Helper to combine team lists
-const TEAM_LIST = [...MEN_TEAMS, ...WOMEN_TEAMS];
+const TEAM_LIST = ALL_TEAMS;
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -274,6 +274,9 @@ export default function ProfilePage() {
                     <span className="text-xs text-red-100 mb-2">응원 팀</span>
                     {isEditingTeam ? (
                       <div className="w-full">
+                        <p className="text-[10px] text-red-200 mb-2 text-center font-bold animate-pulse">
+                          ⚠️ 한 번 선택하면 변경할 수 없습니다!
+                        </p>
                         <select
                           className="w-full text-black text-xs p-1 rounded mb-2"
                           value={selectedTeam || ""}
@@ -304,10 +307,13 @@ export default function ProfilePage() {
                     ) : (
                       <div
                         onClick={() => {
-                          setSelectedTeam(user.my_team || "");
+                          if (user.my_team) return;
+                          setSelectedTeam("");
                           setIsEditingTeam(true);
                         }}
-                        className="flex flex-col items-center cursor-pointer hover:scale-105 transition-transform"
+                        className={`flex flex-col items-center transition-transform ${
+                          !user.my_team ? "cursor-pointer hover:scale-105" : "cursor-default"
+                        }`}
                       >
                         {user.my_team ? (
                           <>
@@ -320,6 +326,7 @@ export default function ProfilePage() {
                               />
                             </div>
                             <span className="font-bold">{user.my_team}</span>
+                            <span className="text-[10px] text-rose-200 mt-1">변경 불가</span>
                           </>
                         ) : (
                           <span className="text-sm opacity-50">선택하기 +</span>
@@ -467,11 +474,23 @@ export default function ProfilePage() {
                           {/* Team Match Info */}
                           {room.home_team && room.away_team ? (
                             <div className="flex items-center gap-1 text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                              <span className={user.my_team === room.home_team ? "text-red-600" : ""}>
+                              <span
+                                className={
+                                  user.my_team?.replace(/\((배구|농구)\)/, "").trim() === room.home_team
+                                    ? "text-red-600"
+                                    : ""
+                                }
+                              >
                                 {room.home_team}
                               </span>
                               <span className="text-zinc-400 text-[10px]">vs</span>
-                              <span className={user.my_team === room.away_team ? "text-red-600" : ""}>
+                              <span
+                                className={
+                                  user.my_team?.replace(/\((배구|농구)\)/, "").trim() === room.away_team
+                                    ? "text-red-600"
+                                    : ""
+                                }
+                              >
                                 {room.away_team}
                               </span>
                             </div>
@@ -518,9 +537,17 @@ export default function ProfilePage() {
       </div>
 
       {/* Bottom: Team Schedule */}
-      <div className="container mx-auto px-4 mt-2">
-        <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
-          🎯 {user.my_team ? `${user.my_team} 경기 일정` : "경기 일정"}
+      <div className="container mx-auto px-4 mt-2" id="team-selection-area">
+        <h3 className="text-lg font-bold mb-3 flex items-center justify-between">
+          <span className="flex items-center gap-2">🎯 {user.my_team ? `${user.my_team} 경기 일정` : "경기 일정"}</span>
+          {user.my_team && (
+            <Link
+              href="/certification"
+              className="text-xs font-bold text-red-500 bg-red-50 dark:bg-red-900/30 px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors flex items-center gap-1"
+            >
+              📅 직관 인증 캘린더 보기 <span className="text-[10px]">▶</span>
+            </Link>
+          )}
         </h3>
 
         <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
@@ -529,11 +556,7 @@ export default function ProfilePage() {
               <p className="mb-2">응원하는 팀을 선택하면 경기 일정이 표시됩니다.</p>
               <button
                 onClick={() => {
-                  const el = document.getElementById("team-selection-area");
-                  if (el) {
-                    el.scrollIntoView({ behavior: "smooth", block: "center" });
-                    setIsEditingTeam(true); // Automatically open edit mode
-                  }
+                  setIsEditingTeam(true);
                 }}
                 className="text-white bg-red-500 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-600"
               >
