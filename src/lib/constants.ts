@@ -10,7 +10,26 @@ export const WOMEN_TEAMS = [
   "페퍼저축은행",
 ];
 
-export const ALL_TEAMS = [...MEN_TEAMS, ...WOMEN_TEAMS];
+export const BASKETBALL_MEN_TEAMS = [
+  "DB",
+  "삼성",
+  "SK",
+  "LG",
+  "소노",
+  "KCC",
+  "정관장",
+  "KT",
+  "한국가스공사",
+  "현대모비스",
+];
+
+export const BASKETBALL_WOMEN_TEAMS = ["삼성생명", "신한은행", "우리은행", "하나은행", "BNK 썸", "KB스타즈"];
+
+// Combine for helper types if needed, or keep separate.
+// Existing ALL_TEAMS (Volleyball only for now, or update logic)
+export const VOLLEYBALL_TEAMS = [...MEN_TEAMS, ...WOMEN_TEAMS];
+export const BASKETBALL_TEAMS = [...BASKETBALL_MEN_TEAMS, ...BASKETBALL_WOMEN_TEAMS];
+export const ALL_TEAMS = [...VOLLEYBALL_TEAMS, ...BASKETBALL_TEAMS];
 
 export const CHEERING_STYLES = [
   "목청 황제 📢",

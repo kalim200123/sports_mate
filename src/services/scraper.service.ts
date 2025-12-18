@@ -198,4 +198,307 @@ export class ScraperService {
       if (browser) await browser.close();
     }
   }
+  /**
+   * 네이버 스포츠(e.g. m.sports.naver.com)에서 농구 경기 일정 크롤링
+   * category: 'kbl' | 'wkbl'
+   * date: 'YYYY-MM-DD' (해당 월의 데이터를 가져옴)
+   */
+  static async scrapeBasketballMatches(category: "kbl" | "wkbl"): Promise<number> {
+    let browser;
+    try {
+      browser = await puppeteer.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
+      const page = await browser.newPage();
+      await page.setViewport({ width: 1920, height: 1080 });
+
+      let totalSaved = 0;
+
+      if (category === "wkbl") {
+        // WKBL: Nov 2025 to April 2026
+        const months = ["202511", "202512", "202601", "202602", "202603", "202604"];
+
+        for (const yyyymm of months) {
+          const url = `https://www.wkbl.or.kr/game/sch/schedule1.asp?gun=1&season_gu=046&ym=${yyyymm}`;
+          console.log(`[Scraper] WKBL - Navigating to ${url}`);
+
+          await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
+
+          // Extract Data: Scan ALL rows
+          const matches = await page.evaluate(() => {
+            const results: any[] = [];
+            const allRows = Array.from(document.querySelectorAll("tr"));
+
+            for (const tr of allRows) {
+              const tds = Array.from(tr.querySelectorAll("td"));
+              if (tds.length < 4) continue;
+
+              // Date: "11/16(일)"
+              const dateText = tds[0].innerText.trim();
+              const dateMatch = dateText.match(/^(\d+)\/(\d+)/);
+              if (!dateMatch) {
+                console.log("Row skipped: invalid date");
+                continue;
+              }
+
+              const month = dateMatch[1].padStart(2, "0");
+              const day = dateMatch[2].padStart(2, "0");
+
+              // Teams: .team_versus > .info_team
+              const versusDiv = tds[1].querySelector(".team_versus");
+              if (!versusDiv) {
+                console.log("Row skipped: no versus");
+                continue;
+              }
+
+              const teams = Array.from(versusDiv.querySelectorAll(".info_team"));
+              if (teams.length < 2) continue;
+
+              const homeNode = teams[0];
+              const awayNode = teams[1];
+
+              const homeName = homeNode.querySelector(".team_name")?.textContent?.trim() || "";
+              const homeScoreText = homeNode.querySelector(".txt_score")?.textContent?.trim() || "0";
+
+              const awayName = awayNode.querySelector(".team_name")?.textContent?.trim() || "";
+              const awayScoreText = awayNode.querySelector(".txt_score")?.textContent?.trim() || "0";
+
+              const stadium = tds[2].innerText.trim();
+              const time = tds[3].innerText.trim(); // "14:25"
+
+              results.push({
+                month,
+                day,
+                home: homeName,
+                away: awayName,
+                homeScore: parseInt(homeScoreText) || 0,
+                awayScore: parseInt(awayScoreText) || 0,
+                stadium,
+                time,
+              });
+            }
+            return results;
+          });
+
+          console.log(`[Scraper] Found ${matches.length} matches for WKBL ${yyyymm}`);
+
+          for (const m of matches) {
+            try {
+              const year = yyyymm.substring(0, 4);
+              const dateStr = `${year}-${m.month}-${m.day}`;
+              const timeStr = m.time.includes(":") ? `${m.time}:00` : "00:00:00";
+              const fullDateTime = `${dateStr} ${timeStr}`;
+
+              console.log(`Processing match: ${m.home} vs ${m.away} on ${fullDateTime}`);
+
+              const matchTime = new Date(fullDateTime).getTime();
+              const now = Date.now();
+              let status = "SCHEDULED";
+
+              // Logic: Score exists?
+              if (m.homeScore > 0 || m.awayScore > 0) {
+                if (now - matchTime > 3 * 60 * 60 * 1000) status = "COMPLETED";
+                else if (now > matchTime) status = "LIVE";
+              } else {
+                if (now - matchTime > 3 * 60 * 60 * 1000) status = "COMPLETED"; // Assume done if time passed
+              }
+
+              // DB Upsert
+              const [existing] = await pool.query<RowDataPacket[]>(
+                `SELECT id FROM matches WHERE match_date = ? AND home_team = ? AND sport = 'BASKETBALL'`,
+                [fullDateTime, m.home]
+              );
+
+              console.log(`Existing count: ${existing.length}`);
+
+              if (existing.length === 0) {
+                await pool.query(
+                  `INSERT INTO matches (match_date, home_team, away_team, location, home_score, away_score, status, sport, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                  [fullDateTime, m.home, m.away, m.stadium, m.homeScore, m.awayScore, status, "BASKETBALL", new Date()]
+                );
+                totalSaved++;
+              } else {
+                await pool.query(`UPDATE matches SET home_score=?, away_score=?, status=? WHERE id=?`, [
+                  m.homeScore,
+                  m.awayScore,
+                  status,
+                  existing[0].id,
+                ]);
+              }
+            } catch (error) {
+              console.error("Error processing match:", error);
+            }
+          }
+        }
+        return totalSaved;
+      }
+
+      // KBL Logic
+      if (category === "kbl") {
+        const url = "https://kbl.or.kr/match/schedule";
+        console.log(`[Scraper] KBL - Navigating to ${url}`);
+
+        await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
+
+        // Wait for initial load
+        try {
+          await page.waitForSelector(".date", { timeout: 10000 });
+        } catch {
+          console.log("[Scraper] KBL - .date selector timeout");
+        }
+
+        // KBL targets: Sep 2025 -> Apr 2026
+        const targetMonths = ["2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"];
+
+        for (const target of targetMonths) {
+          // Navigate to target month
+          console.log(`[Scraper] KBL - Seeking ${target}...`);
+          let attempts = 0;
+          while (attempts < 20) {
+            // Get current displayed month
+            const currentText = await page.evaluate(() => {
+              const els = document.querySelectorAll(".date p, .date span, ul.date li p"); // Try multiple
+              for (const el of Array.from(els)) {
+                if (/20\d\d\s*\.?\s*\d{1,2}/.test((el as HTMLElement).innerText)) return (el as HTMLElement).innerText;
+              }
+              return "";
+            });
+
+            // Parse "2025. 12" or "2025.12"
+            const normalizedCurrent = currentText.replace(/[^\d]/g, ""); // 202512
+            const normalizedTarget = target.replace(/-/g, ""); // 202512
+
+            if (!normalizedCurrent) {
+              console.log("[Scraper] KBL - Could not read current date.");
+              break;
+            }
+
+            if (normalizedCurrent === normalizedTarget) {
+              break; // Arrived
+            }
+
+            // Determine direction
+            const curY = parseInt(normalizedCurrent.substring(0, 4));
+            const curM = parseInt(normalizedCurrent.substring(4));
+            const tarY = parseInt(normalizedTarget.substring(0, 4));
+            const tarM = parseInt(normalizedTarget.substring(4));
+
+            const diff = tarY * 12 + tarM - (curY * 12 + curM);
+
+            if (diff < 0) {
+              // Go Prev
+              await page.click("button[title='이전으로']");
+            } else {
+              // Go Next
+              await page.click("button[title='다음으로']");
+            }
+
+            await new Promise((r) => setTimeout(r, 1000)); // Wait for transition
+            attempts++;
+          }
+
+          // Scrape current month
+          const scrapedMatches = await page.evaluate(() => {
+            const results: any[] = [];
+            const dayContainers = Array.from(document.querySelectorAll("div[id^='game-']"));
+
+            for (const container of dayContainers) {
+              const id = container.id;
+              const dateStr = id.replace("game-", "");
+              if (dateStr.length !== 8) continue;
+
+              const yyyy = dateStr.substring(0, 4);
+              const mm = dateStr.substring(4, 6);
+              const dd = dateStr.substring(6, 8);
+              const fullDate = `${yyyy}-${mm}-${dd}`;
+
+              const matchItems = Array.from(container.querySelectorAll(":scope > ul > li"));
+
+              for (const item of matchItems) {
+                const labelEl = item.querySelector(".sub .desc .label");
+                const labelText = labelEl ? labelEl.textContent?.trim() || "" : "";
+                if (labelText.includes("D리그")) continue;
+
+                const metaLis = item.querySelectorAll(".sub .desc > ul > li");
+                let time = "00:00";
+                let stadium = "Unknown";
+                if (metaLis.length >= 1) time = metaLis[0].textContent?.trim() || "00:00";
+                if (metaLis.length >= 2) stadium = metaLis[1].textContent?.trim() || "Unknown";
+
+                const teamLis = Array.from(item.querySelectorAll(".info .versus > li"));
+                if (teamLis.length < 2) continue;
+
+                const homeLi = teamLis[0];
+                const awayLi = teamLis[1];
+
+                const home = homeLi.querySelector("div p")?.textContent?.trim() || "";
+                const away = awayLi.querySelector("div p")?.textContent?.trim() || "";
+
+                const homeScoreP = homeLi.querySelector(":scope > p");
+                const awayScoreP = awayLi.querySelector(":scope > p");
+
+                let homeScore = 0;
+                let awayScore = 0;
+                if (homeScoreP && awayScoreP && homeScoreP.textContent && awayScoreP.textContent) {
+                  homeScore = parseInt(homeScoreP.textContent.trim()) || 0;
+                  awayScore = parseInt(awayScoreP.textContent.trim()) || 0;
+                }
+
+                let status = "SCHEDULED";
+                if (
+                  homeLi.classList.contains("win") ||
+                  homeLi.classList.contains("lose") ||
+                  awayLi.classList.contains("win") ||
+                  awayLi.classList.contains("lose")
+                ) {
+                  status = "COMPLETED";
+                } else if (homeScore > 0 && awayScore > 0) {
+                  status = "LIVE";
+                }
+
+                if (home && away) {
+                  results.push({ date: fullDate, time, home, away, homeScore, awayScore, stadium, status });
+                }
+              }
+            }
+            return results;
+          });
+
+          console.log(`[Scraper] Found ${scrapedMatches.length} matches for KBL ${target}`);
+
+          for (const m of scrapedMatches) {
+            const matchDateTime = `${m.date} ${m.time}:00`;
+            // Use more specific deduplication
+            const [existing] = await pool.query<RowDataPacket[]>(
+              `SELECT id FROM matches WHERE match_date = ? AND home_team = ? AND sport='BASKETBALL'`,
+              [matchDateTime, m.home]
+            );
+
+            if (existing.length === 0) {
+              await pool.query(
+                `INSERT INTO matches (match_date, home_team, away_team, location, home_score, away_score, status, sport, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [matchDateTime, m.home, m.away, m.stadium, m.homeScore, m.awayScore, m.status, "BASKETBALL", new Date()]
+              );
+              totalSaved++;
+            } else {
+              await pool.query(`UPDATE matches SET home_score=?, away_score=?, status=? WHERE id=?`, [
+                m.homeScore,
+                m.awayScore,
+                m.status,
+                existing[0].id,
+              ]);
+            }
+          }
+        }
+        return totalSaved;
+      }
+      return 0;
+    } catch (e) {
+      console.error(e);
+      return 0;
+    } finally {
+      if (browser) await browser.close();
+    }
+  }
 }

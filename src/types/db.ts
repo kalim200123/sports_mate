@@ -74,6 +74,7 @@ export interface Room {
   updated_at: Date;
   deleted_at?: Date | null;
   role?: UserRoomRole;
+  unread_count?: number;
 }
 
 export interface UserRoom {

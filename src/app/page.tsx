@@ -1,174 +1,94 @@
-import MatchAuthActions from "@/components/match/MatchAuthActions";
-import MatchFilter from "@/components/MatchFilter";
-import ScrollToTop from "@/components/ScrollToTop";
-import { getTeamEmblem } from "@/lib/utils";
-import { MatchFilters, MatchService } from "@/services/match.service";
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
-import Image from "next/image";
+import MatchCarousel from "@/components/match/MatchCarousel";
+import { MatchService } from "@/services/match.service";
+import Link from "next/link";
 
-export const revalidate = 0; // Disable cache for real-time updates
+export const dynamic = "force-dynamic"; // Ensure fresh data on every request
 
-interface PageProps {
-  searchParams: Promise<{ [key: string]: string | undefined }>;
-}
-
-export default async function Home(props: PageProps) {
-  const searchParams = await props.searchParams;
-
-  const filters: MatchFilters = {
-    gender: (searchParams.gender as "MEN" | "WOMEN" | "ALL") || undefined,
-    team: searchParams.team === "ALL" ? undefined : searchParams.team,
-    date: searchParams.date,
-    month: searchParams.month || (searchParams.date ? undefined : "2025-12"), // Default validation
-  };
-
-  const matches = await MatchService.getMatches(filters);
-
-  // Group matches by date
-  const matchesByDate = matches.reduce((acc, match) => {
-    const dateKey = format(match.match_date, "yyyy-MM-dd");
-    if (!acc[dateKey]) acc[dateKey] = [];
-    acc[dateKey].push(match);
-    return acc;
-  }, {} as Record<string, typeof matches>);
-
-  const sortedDates = Object.keys(matchesByDate).sort();
+export default async function Home() {
+  const matches = await MatchService.getUpcomingMatches(10);
 
   return (
-    <div className="flex min-h-screen flex-col bg-white dark:bg-[#121212] font-sans">
-      {/* Header & Sticky Filter */}
-      <div className="bg-white/95 dark:bg-[#121212]/95 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 shadow-sm transition-all duration-300">
-        <div className="w-full max-w-5xl mx-auto px-4 py-4">
-          <MatchFilter />
+    <div className="flex flex-col min-h-screen bg-white dark:bg-zinc-950 font-sans pb-20">
+      {/* 1. Hero / Banner Section */}
+      <section className="relative w-full h-64 bg-gradient-to-br from-blue-600 to-purple-700 overflow-hidden">
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="relative z-10 flex flex-col items-center justify-center h-full text-white px-4 text-center">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">오늘의 직관, 승리의 요정이 되어보세요! 🧚</h1>
+          <p className="text-blue-100 text-lg mb-6">함께 응원할 메이트를 찾고, 직관 기록을 남겨보세요.</p>
+          <Link
+            href="/schedule"
+            className="px-6 py-3 bg-white text-blue-600 font-bold rounded-full shadow-lg hover:bg-zinc-100 transition-transform hover:scale-105 active:scale-95"
+          >
+            경기 일정 보러가기 🗓️
+          </Link>
         </div>
-      </div>
+      </section>
 
-      {/* Match List */}
-      <div className="w-full max-w-5xl mx-auto p-4 flex flex-col gap-8 pb-20">
-        {matches.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 opacity-60">
-            <div className="text-4xl">🏐</div>
-            <p className="text-zinc-500 font-medium">예정된 경기가 없습니다.</p>
-          </div>
-        ) : (
-          sortedDates.map((dateKey) => {
-            const dateMatches = matchesByDate[dateKey];
-            const dateObj = new Date(dateKey);
-            return (
-              <div
-                key={dateKey}
-                className="flex flex-col shadow-sm border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden"
-              >
-                {/* Date Header */}
-                <div className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 px-6 py-3 flex justify-center items-center">
-                  <h3 className="text-lg font-bold text-zinc-800 dark:text-zinc-100">
-                    {format(dateObj, "M월 d일 (EEE)", { locale: ko })}
-                  </h3>
-                </div>
+      {/* 2. Quick Menu Grid */}
+      <section className="py-8 px-4 max-w-5xl mx-auto w-full">
+        <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-4 px-1">바로가기</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Link
+            href="/schedule?sport=VOLLEYBALL"
+            className="flex flex-col items-center justify-center p-6 bg-zinc-50 dark:bg-zinc-900 rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border border-zinc-100 dark:border-zinc-800"
+          >
+            <span className="text-3xl mb-2">🏐</span>
+            <span className="font-bold text-zinc-700 dark:text-zinc-300">배구 일정</span>
+          </Link>
+          <Link
+            href="/schedule?sport=BASKETBALL"
+            className="flex flex-col items-center justify-center p-6 bg-zinc-50 dark:bg-zinc-900 rounded-2xl hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors border border-zinc-100 dark:border-zinc-800"
+          >
+            <span className="text-3xl mb-2">🏀</span>
+            <span className="font-bold text-zinc-700 dark:text-zinc-300">농구 일정</span>
+          </Link>
+          <Link
+            href="/rooms"
+            className="flex flex-col items-center justify-center p-6 bg-zinc-50 dark:bg-zinc-900 rounded-2xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors border border-zinc-100 dark:border-zinc-800"
+          >
+            <span className="text-3xl mb-2">📣</span>
+            <span className="font-bold text-zinc-700 dark:text-zinc-300">직관 동행</span>
+          </Link>
+          <Link
+            href="/profile"
+            className="flex flex-col items-center justify-center p-6 bg-zinc-50 dark:bg-zinc-900 rounded-2xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border border-zinc-100 dark:border-zinc-800"
+          >
+            <span className="text-3xl mb-2">🎫</span>
+            <span className="font-bold text-zinc-700 dark:text-zinc-300">직관 인증</span>
+          </Link>
+        </div>
+      </section>
 
-                {/* Matches in this date */}
-                <div className="bg-white dark:bg-zinc-900 divide-y divide-zinc-100 dark:divide-zinc-800">
-                  {dateMatches.map((match) => (
-                    <div
-                      key={match.id}
-                      className="flex flex-col md:flex-row items-center p-4 md:h-24 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors gap-4 md:gap-0"
-                    >
-                      {/* Left: Time & Location */}
-                      <div className="flex flex-row md:flex-col items-center md:items-start gap-4 md:gap-1 w-full md:w-32 text-sm text-zinc-500 whitespace-nowrap px-2">
-                        <span className="font-bold text-zinc-900 dark:text-zinc-300">
-                          {format(match.match_date, "HH:mm")}
-                        </span>
-                        <span className="text-xs truncate max-w-[120px]" title={match.location}>
-                          {match.location}
-                        </span>
-                      </div>
+      {/* 3. Today's Matches Carousel */}
+      <MatchCarousel matches={matches} title="🔥 오늘의 경기" />
 
-                      {/* Center: Match Content */}
-                      <div className="flex-1 flex items-center justify-center w-full gap-4 md:gap-8">
-                        {/* Home Team */}
-                        <div className="flex items-center justify-end gap-3 flex-1">
-                          <span className="font-bold text-zinc-800 dark:text-zinc-100 text-sm md:text-base whitespace-nowrap">
-                            {match.home_team}
-                          </span>
-                          <div className="w-8 h-8 md:w-10 md:h-10 relative">
-                            <Image
-                              src={getTeamEmblem(match.home_team)}
-                              alt={match.home_team}
-                              fill
-                              className="object-contain"
-                              sizes="40px"
-                            />
-                          </div>
-                        </div>
+      {/* 4. Hot Live Rooms (Placeholder) */}
+      <section className="py-4 px-4 max-w-5xl mx-auto w-full">
+        <div className="flex justify-between items-center mb-4 px-1">
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">💬 실시간 인기 응원방</h2>
+          <Link href="/rooms" className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300">
+            더보기 &gt;
+          </Link>
+        </div>
 
-                        {/* Scores / Status */}
-                        <div className="flex items-center gap-3 px-2 min-w-[100px] justify-center">
-                          {match.status === "SCHEDULED" ? (
-                            <span className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full text-xs font-medium text-zinc-500">
-                              예정
-                            </span>
-                          ) : (
-                            <>
-                              <span
-                                className={`text-xl md:text-2xl font-bold ${
-                                  match.home_score > match.away_score
-                                    ? "text-blue-600"
-                                    : "text-zinc-800 dark:text-zinc-300"
-                                }`}
-                              >
-                                {match.home_score}
-                              </span>
-                              <div className="flex flex-col items-center gap-1">
-                                {match.status === "LIVE" ? (
-                                  <span className="text-[10px] font-bold text-red-500 animate-pulse">LIVE</span>
-                                ) : (
-                                  <span className="text-[10px] text-zinc-400">종료</span>
-                                )}
-                              </div>
-                              <span
-                                className={`text-xl md:text-2xl font-bold ${
-                                  match.away_score > match.home_score
-                                    ? "text-blue-600"
-                                    : "text-zinc-800 dark:text-zinc-300"
-                                }`}
-                              >
-                                {match.away_score}
-                              </span>
-                            </>
-                          )}
-                        </div>
+        {/* Empty State for Dashboard MVP */}
+        <div className="bg-zinc-50 dark:bg-zinc-900 rounded-2xl p-8 text-center text-zinc-500 border border-dashed border-zinc-200 dark:border-zinc-800">
+          <p>현재 뜨거운 응원방이 없습니다.</p>
+          <p className="text-sm mt-1">곧 경기가 시작되면 응원방이 생길 거예요!</p>
+        </div>
+      </section>
 
-                        {/* Away Team */}
-                        <div className="flex items-center justify-start gap-3 flex-1">
-                          <div className="w-8 h-8 md:w-10 md:h-10 relative">
-                            <Image
-                              src={getTeamEmblem(match.away_team)}
-                              alt={match.away_team}
-                              fill
-                              className="object-contain"
-                              sizes="40px"
-                            />
-                          </div>
-                          <span className="font-bold text-zinc-800 dark:text-zinc-100 text-sm md:text-base whitespace-nowrap">
-                            {match.away_team}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Right: Actions */}
-                      <div className="flex items-center gap-2 w-full md:w-auto justify-center md:justify-end px-2 mt-2 md:mt-0">
-                        <MatchAuthActions matchId={match.id} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-      <ScrollToTop />
+      {/* 5. My Stats (Login Required Placeholder) */}
+      <section className="py-4 px-4 max-w-5xl mx-auto w-full mb-10">
+        <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-4 px-1">👑 나의 직관 승률</h2>
+        <div className="bg-gradient-to-r from-zinc-800 to-zinc-900 text-white rounded-2xl p-6 shadow-lg">
+          <p className="text-lg font-bold mb-2">로그인이 필요해요</p>
+          <p className="text-zinc-400 text-sm mb-4">로그인하고 나의 직관 승률을 확인해보세요.</p>
+          <Link href="/login" className="px-4 py-2 bg-white text-black text-sm font-bold rounded-lg">
+            로그인하기
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

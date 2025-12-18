@@ -1,6 +1,6 @@
 "use client";
 
-import { MEN_TEAMS, WOMEN_TEAMS } from "@/lib/constants";
+import { BASKETBALL_MEN_TEAMS, BASKETBALL_WOMEN_TEAMS, MEN_TEAMS, WOMEN_TEAMS } from "@/lib/constants";
 import { getTeamEmblem } from "@/lib/utils";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -61,6 +61,12 @@ export default function MatchFilter() {
       }
     }
 
+    // Reset team and gender if sport changes
+    if (updates.sport) {
+      params.delete("team");
+      params.delete("gender");
+    }
+
     // If selecting a month, ensure date filter is cleared (as they conflict/override)
     if (updates.month) {
       params.delete("date");
@@ -71,10 +77,18 @@ export default function MatchFilter() {
     });
   };
 
+  const currentSport = searchParams.get("sport") || "VOLLEYBALL"; // VOLLEYBALL | BASKETBALL
+
   // Determine teams to show (Only if Gender is MEN or WOMEN)
   let displayedTeams: string[] = [];
-  if (currentGender === "MEN") displayedTeams = MEN_TEAMS;
-  else if (currentGender === "WOMEN") displayedTeams = WOMEN_TEAMS;
+  if (currentSport === "BASKETBALL") {
+    if (currentGender === "MEN") displayedTeams = BASKETBALL_MEN_TEAMS;
+    else if (currentGender === "WOMEN") displayedTeams = BASKETBALL_WOMEN_TEAMS;
+  } else {
+    // VOLLEYBALL (Default)
+    if (currentGender === "MEN") displayedTeams = MEN_TEAMS;
+    else if (currentGender === "WOMEN") displayedTeams = WOMEN_TEAMS;
+  }
   // If ALL, displayedTeams remains empty -> Emblems hidden
 
   const currentIndex = MONTHS.findIndex((m) => m.value === currentMonth);
@@ -146,14 +160,36 @@ export default function MatchFilter() {
   return (
     <>
       {compactHeader}
-      <div className="w-full space-y-8 py-4">
-        {/* 1. Top Tabs (Pill Shape) */}
+      <div className="w-full space-y-6 py-4">
+        {/* 1. Sport Toggle */}
+        <div className="flex justify-center">
+          <div className="inline-flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-full">
+            {[
+              { label: "배구 🏐", value: "VOLLEYBALL" },
+              { label: "농구 🏀", value: "BASKETBALL" },
+            ].map((sport) => (
+              <button
+                key={sport.value}
+                onClick={() => updateFilter({ sport: sport.value })}
+                className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
+                  currentSport === sport.value
+                    ? "bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
+                }`}
+              >
+                {sport.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 2. Top Tabs (Gender - Match V-League or K-League text dynamically?) */}
         <div className="flex justify-center">
           <div className="flex gap-2">
             {[
               { label: "전체", value: "ALL" },
-              { label: "V-리그 남자부", value: "MEN" },
-              { label: "V-리그 여자부", value: "WOMEN" },
+              { label: currentSport === "BASKETBALL" ? "KBL 남자부" : "V-리그 남자부", value: "MEN" },
+              { label: currentSport === "BASKETBALL" ? "WKBL 여자부" : "V-리그 여자부", value: "WOMEN" },
             ].map((tab) => (
               <button
                 key={tab.value}
@@ -214,7 +250,13 @@ export default function MatchFilter() {
                 >
                   {}
                   <Image
-                    src="https://cdn.dev.kovo.co.kr/favicons/kovo.svg"
+                    src={
+                      currentSport === "BASKETBALL"
+                        ? currentGender === "WOMEN"
+                          ? "/teams/wkbl_logo.svg"
+                          : "/teams/kbl_logo.svg"
+                        : "https://cdn.dev.kovo.co.kr/favicons/kovo.svg"
+                    }
                     alt="전체"
                     width={32}
                     height={32}

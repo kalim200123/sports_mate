@@ -150,10 +150,18 @@ export class RoomService {
   /**
    * 사용자가 참여 중인 방 목록 조회
    */
+  /**
+   * 마지막 읽은 시간 업데이트
+   */
+  static async updateLastReadAt(roomId: number, userId: number): Promise<void> {
+    await pool.query("UPDATE user_rooms SET last_read_at = NOW() WHERE user_id = ? AND room_id = ?", [userId, roomId]);
+  }
+
   static async getUserJoinedRooms(userId: number): Promise<Room[]> {
     const query = `
-      SELECT r.*, m.home_team, m.away_team, m.match_date, ur.role,
-             (SELECT COUNT(*) FROM user_rooms ur2 WHERE ur2.room_id = r.id AND ur2.status = 'JOINED') as current_count
+      SELECT r.*, m.home_team, m.away_team, m.match_date, ur.role, ur.last_read_at,
+             (SELECT COUNT(*) FROM user_rooms ur2 WHERE ur2.room_id = r.id AND ur2.status = 'JOINED') as current_count,
+             (SELECT COUNT(*) FROM room_messages rm WHERE rm.room_id = r.id AND rm.created_at > ur.last_read_at) as unread_count
       FROM user_rooms ur
       JOIN rooms r ON ur.room_id = r.id
       JOIN matches m ON r.match_id = m.id

@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "cdn.dev.kovo.co.kr",
       },
+      {
+        protocol: "https",
+        hostname: "kbl.or.kr",
+      },
     ],
   },
 

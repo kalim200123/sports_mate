@@ -2,6 +2,8 @@
 
 import UserModal from "@/components/user/UserModal";
 import { useUserStore } from "@/store/use-user-store";
+import { format, isSameDay } from "date-fns";
+import { ko } from "date-fns/locale";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -77,6 +79,11 @@ export default function CheeringChat({ roomId, hostId, initialJoinedUsers, title
       }
     };
     fetchHistory();
+
+    // 0.5 Mark as Read
+    if (user) {
+      fetch(`/api/rooms/${roomId}/read`, { method: "POST" });
+    }
 
     // 1. Connect to Socket Server
     socketRef.current = io("http://localhost:4000");
@@ -307,31 +314,55 @@ export default function CheeringChat({ roomId, hostId, initialJoinedUsers, title
           <div className="space-y-4">
             {messages.map((msg, index) => {
               const matchesUser = user && String(msg.user_id) === String(user.id);
+              const prevMsg = messages[index - 1];
+              const isNewDate = !prevMsg || !isSameDay(new Date(prevMsg.created_at), new Date(msg.created_at));
+
               return (
-                <div key={index} className={`flex gap-3 ${matchesUser ? "flex-row-reverse" : ""}`}>
-                  {/* Avatar */}
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity ${
-                      matchesUser ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600"
-                    }`}
-                    onClick={() => setSelectedUserId(Number(msg.user_id))}
-                  >
-                    {msg.avatar_url ? (
-                      <Image src={msg.avatar_url} alt="avatar" width={32} height={32} className="object-cover" />
-                    ) : (
-                      msg.nickname.charAt(0)
-                    )}
-                  </div>
-                  <div className={`flex flex-col gap-1 ${matchesUser ? "items-end" : ""}`}>
-                    <span className="text-xs text-zinc-500 font-medium">{msg.nickname}</span>
+                <div key={index}>
+                  {isNewDate && (
+                    <div className="flex justify-center my-4">
+                      <span className="text-xs text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
+                        {format(new Date(msg.created_at), "yyyy년 M월 d일", { locale: ko })}
+                      </span>
+                    </div>
+                  )}
+                  <div className={`flex gap-3 ${matchesUser ? "flex-row-reverse" : ""}`}>
+                    {/* Avatar */}
                     <div
-                      className={`p-2.5 rounded-2xl text-sm shadow-sm border ${
-                        matchesUser
-                          ? "bg-blue-600 text-white rounded-tr-none"
-                          : "bg-white dark:bg-zinc-800 border-zinc-100 dark:border-zinc-700 rounded-tl-none"
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity ${
+                        matchesUser ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600"
                       }`}
+                      onClick={() => setSelectedUserId(Number(msg.user_id))}
                     >
-                      {msg.content}
+                      {msg.avatar_url ? (
+                        <Image src={msg.avatar_url} alt="avatar" width={32} height={32} className="object-cover" />
+                      ) : (
+                        msg.nickname.charAt(0)
+                      )}
+                    </div>
+                    <div className={`flex flex-col gap-1 ${matchesUser ? "items-end" : "items-start"}`}>
+                      <span className="text-xs text-zinc-500 font-medium">{msg.nickname}</span>
+                      <div className="flex items-end gap-1.5">
+                        {matchesUser && (
+                          <span className="text-[10px] text-zinc-400 min-w-fit mb-0.5">
+                            {format(new Date(msg.created_at), "a h:mm", { locale: ko })}
+                          </span>
+                        )}
+                        <div
+                          className={`p-2.5 rounded-2xl text-sm shadow-sm border ${
+                            matchesUser
+                              ? "bg-blue-600 text-white rounded-tr-none"
+                              : "bg-white dark:bg-zinc-800 border-zinc-100 dark:border-zinc-700 rounded-tl-none"
+                          }`}
+                        >
+                          {msg.content}
+                        </div>
+                        {!matchesUser && (
+                          <span className="text-[10px] text-zinc-400 min-w-fit mb-0.5">
+                            {format(new Date(msg.created_at), "a h:mm", { locale: ko })}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

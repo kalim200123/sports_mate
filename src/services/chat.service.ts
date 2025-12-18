@@ -63,7 +63,7 @@ export class ChatService {
         m.content, 
         m.created_at,
         u.nickname,
-        u.avatar_id
+        u.profile_image_url
       FROM room_messages m
       JOIN users u ON m.user_id = u.id
       WHERE m.room_id = ?
@@ -80,7 +80,7 @@ export class ChatService {
       content: row.content,
       created_at: row.created_at,
       nickname: row.nickname,
-      avatar_url: getAvatarUrl(row.avatar_id),
+      avatar_url: row.profile_image_url || getAvatarUrl(0),
     }));
   }
 }

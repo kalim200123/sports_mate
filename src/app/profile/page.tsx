@@ -504,6 +504,9 @@ export default function ProfilePage() {
                         <h4 className="font-bold text-zinc-900 dark:text-zinc-100 mb-0 group-hover:text-blue-600 transition-colors line-clamp-1 text-sm">
                           {room.title}
                         </h4>
+                        {room.unread_count && room.unread_count > 0 ? (
+                          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse ml-1" />
+                        ) : null}
                       </div>
                     </div>
                   </Link>

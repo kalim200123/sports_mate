@@ -52,5 +52,25 @@ export function getTeamEmblem(teamName: string) {
   if (teamName.includes("GS")) return "https://cdn.dev.kovo.co.kr/favicons/kixx.svg";
   if (teamName.includes("페퍼")) return "https://cdn.dev.kovo.co.kr/favicons/aipeppers.svg";
 
-  return "/icons/volleyball.png"; // Fallback
+  // Basketball (KBL Men)
+  if (teamName.includes("DB")) return "/teams/wonju_db.svg";
+  if (teamName.includes("삼성") && !teamName.includes("생명")) return "/teams/seoul_samsung.svg"; // Exclude Women's Samsung Life
+  if (teamName.includes("SK")) return "/teams/seoul_sk.svg";
+  if (teamName.includes("LG")) return "/teams/changwon_lg.svg";
+  if (teamName.includes("소노")) return "/teams/goyang_sono.svg";
+  if (teamName.includes("KCC")) return "/teams/busan_kcc.svg";
+  if (teamName.includes("정관장")) return "/teams/anyang_jkj.svg"; // Anyang JungKwanJang
+  if (teamName.includes("KT")) return "/teams/suwon_kt.svg";
+  if (teamName.includes("가스공사")) return "/teams/daegu_kogus.svg"; // KOGAS
+  if (teamName.includes("현대모비스")) return "/teams/ulsan_mobis.svg";
+
+  // Basketball (WKBL Women)
+  if (teamName.includes("삼성생명")) return "/teams/yongin_samsung.svg";
+  if (teamName.includes("신한은행")) return "/teams/incheon_shinhan.svg";
+  if (teamName.includes("우리은행")) return "/teams/asan_woori.svg";
+  if (teamName.includes("하나은행")) return "/teams/bucheon_hana.svg";
+  if (teamName.includes("BNK")) return "/teams/busan_bnk.svg";
+  if (teamName.includes("KB스타즈")) return "/teams/cheongju_kb.svg";
+
+  return "/icons/volleyball.png"; // Fallback (Consider separate fallback for Basketball)
 }

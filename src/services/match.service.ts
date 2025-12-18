@@ -1,4 +1,4 @@
-import { MEN_TEAMS, WOMEN_TEAMS } from "@/lib/constants";
+import { BASKETBALL_MEN_TEAMS, BASKETBALL_WOMEN_TEAMS, MEN_TEAMS, WOMEN_TEAMS } from "@/lib/constants";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 
@@ -15,6 +15,7 @@ export interface Match extends RowDataPacket {
 }
 
 export interface MatchFilters {
+  sport?: "VOLLEYBALL" | "BASKETBALL";
   gender?: "MEN" | "WOMEN" | "ALL";
   team?: string;
   date?: string; // YYYY-MM-DD
@@ -47,13 +48,30 @@ export class MatchService {
       const conditions: string[] = [];
       const params: (string | string[])[] = [];
 
+      // 종목 필터
+      if (filters.sport) {
+        conditions.push(`sport = ?`);
+        params.push(filters.sport);
+      }
+
       // 성별 필터
       if (filters.gender === "MEN") {
-        conditions.push(`(home_team IN (?) OR away_team IN (?))`);
-        params.push(MEN_TEAMS, MEN_TEAMS);
+        if (filters.sport === "BASKETBALL") {
+          conditions.push(`(home_team IN (?) OR away_team IN (?))`);
+          params.push(BASKETBALL_MEN_TEAMS, BASKETBALL_MEN_TEAMS);
+        } else {
+          // Default to Volleyball or if VOLLEYBALL selected
+          conditions.push(`(home_team IN (?) OR away_team IN (?))`);
+          params.push(MEN_TEAMS, MEN_TEAMS);
+        }
       } else if (filters.gender === "WOMEN") {
-        conditions.push(`(home_team IN (?) OR away_team IN (?))`);
-        params.push(WOMEN_TEAMS, WOMEN_TEAMS);
+        if (filters.sport === "BASKETBALL") {
+          conditions.push(`(home_team IN (?) OR away_team IN (?))`);
+          params.push(BASKETBALL_WOMEN_TEAMS, BASKETBALL_WOMEN_TEAMS);
+        } else {
+          conditions.push(`(home_team IN (?) OR away_team IN (?))`);
+          params.push(WOMEN_TEAMS, WOMEN_TEAMS);
+        }
       }
 
       // 팀 필터
@@ -106,6 +124,20 @@ export class MatchService {
   static async getMatchesByDate(dateStr: string): Promise<Match[]> {
     return this.getMatches({ date: dateStr });
   }
+  /**
+   * 오늘 이후 예정된(혹은 진행중인) 경기를 가져옵니다. (메인 페이지용)
+   */
+  static async getUpcomingMatches(limit: number = 10): Promise<Match[]> {
+    const query = `
+      SELECT * FROM matches 
+      WHERE match_date >= CURDATE()
+      ORDER BY match_date ASC
+      LIMIT ?
+    `;
+    const [rows] = await pool.query<Match[]>(query, [limit]);
+    return rows;
+  }
+
   /**
    * 특정 팀의 경기 일정을 가져옵니다. (오늘 이후)
    */
