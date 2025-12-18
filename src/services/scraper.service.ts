@@ -446,14 +446,16 @@ export class ScraperService {
                 }
 
                 let status = "SCHEDULED";
-                if (
+                const hasScore = homeScore > 0 || awayScore > 0;
+                const isFinished =
                   homeLi.classList.contains("win") ||
                   homeLi.classList.contains("lose") ||
                   awayLi.classList.contains("win") ||
-                  awayLi.classList.contains("lose")
-                ) {
+                  awayLi.classList.contains("lose");
+
+                if (isFinished && hasScore) {
                   status = "COMPLETED";
-                } else if (homeScore > 0 && awayScore > 0) {
+                } else if (hasScore) {
                   status = "LIVE";
                 }
 

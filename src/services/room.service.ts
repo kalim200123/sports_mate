@@ -4,12 +4,12 @@ import { ResultSetHeader, RowDataPacket } from "mysql2";
 
 export class RoomService {
   /**
-   * 모든 방 목록 조회 (샘플)
+   * 모든 방 목록 조회 (필터링 지원)
    * 비즈니스 로직은 여기서 처리 (DB 조회, 데이터 가공 등)
    */
-  static async getRooms(matchId?: number): Promise<Room[]> {
+  static async getRooms(filters: { matchId?: number; sport?: string } = {}): Promise<Room[]> {
     let query = `
-      SELECT r.*, m.home_team, m.away_team,
+      SELECT r.*, m.home_team, m.away_team, m.match_date, m.sport, m.location,
              (SELECT COUNT(*) FROM user_rooms ur WHERE ur.room_id = r.id AND ur.status = 'JOINED') as current_count
       FROM rooms r
       JOIN matches m ON r.match_id = m.id
@@ -17,12 +17,17 @@ export class RoomService {
     `;
     const params: (string | number)[] = [];
 
-    if (matchId) {
+    if (filters.matchId) {
       query += ` AND r.match_id = ?`;
-      params.push(matchId);
+      params.push(filters.matchId);
     }
 
-    query += ` ORDER BY r.created_at DESC LIMIT 20`;
+    if (filters.sport && filters.sport !== "ALL") {
+      query += ` AND m.sport = ?`;
+      params.push(filters.sport.toUpperCase());
+    }
+
+    query += ` ORDER BY r.created_at DESC LIMIT 50`;
 
     try {
       const [rows] = await pool.query<RowDataPacket[]>(query, params);

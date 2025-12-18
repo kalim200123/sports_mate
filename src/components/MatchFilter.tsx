@@ -161,29 +161,7 @@ export default function MatchFilter() {
     <>
       {compactHeader}
       <div className="w-full space-y-6 py-4">
-        {/* 1. Sport Toggle */}
-        <div className="flex justify-center">
-          <div className="inline-flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-full">
-            {[
-              { label: "배구 🏐", value: "VOLLEYBALL" },
-              { label: "농구 🏀", value: "BASKETBALL" },
-            ].map((sport) => (
-              <button
-                key={sport.value}
-                onClick={() => updateFilter({ sport: sport.value })}
-                className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
-                  currentSport === sport.value
-                    ? "bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm"
-                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
-                }`}
-              >
-                {sport.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 2. Top Tabs (Gender - Match V-League or K-League text dynamically?) */}
+        {/* 1. Top Tabs (Gender) */}
         <div className="flex justify-center">
           <div className="flex gap-2">
             {[
@@ -214,12 +192,12 @@ export default function MatchFilter() {
           </div>
 
           {/* Months Strip */}
-          <div className="flex flex-wrap justify-center gap-6 md:gap-8 w-full px-4 border-b border-zinc-200 dark:border-zinc-800 pb-4">
+          <div className="flex flex-nowrap overflow-x-auto w-full md:w-auto md:flex-wrap justify-start md:justify-center gap-6 md:gap-8 px-4 border-b border-zinc-200 dark:border-zinc-800 pb-4 no-scrollbar">
             {MONTHS.map((m) => (
               <button
                 key={m.value}
                 onClick={() => updateFilter({ month: m.value })}
-                className={`pb-2 text-lg font-medium transition-all relative ${
+                className={`pb-2 text-lg font-medium transition-all relative whitespace-nowrap ${
                   currentMonth === m.value
                     ? "text-blue-600 dark:text-blue-400 font-bold"
                     : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
@@ -234,21 +212,20 @@ export default function MatchFilter() {
           </div>
         </div>
 
-        {/* 3. Team Emblems (Conditional) */}
+        {/* 3. Team Emblems (Conditional) - Scrollable Row */}
         {currentGender !== "ALL" && (
-          <div className="flex justify-center animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="flex flex-wrap gap-4 justify-center max-w-4xl px-4">
+          <div className="w-full overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex flex-nowrap overflow-x-auto gap-4 px-4 py-2 no-scrollbar justify-start md:justify-center items-start min-h-[90px]">
               {/* 'All Teams' Button for the selected gender */}
               <button
                 onClick={() => updateFilter({ team: "ALL" })}
-                className={`flex flex-col items-center gap-2 p-2 transition-all opacity-80 hover:opacity-100`}
+                className={`flex flex-col items-center gap-2 p-2 transition-all opacity-80 hover:opacity-100 flex-shrink-0 min-w-[60px]`}
               >
                 <div
                   className={`w-12 h-12 flex items-center justify-center rounded-full shadow-sm transition-all bg-white dark:bg-zinc-800 ${
                     currentTeam === "ALL" ? "ring-2 ring-blue-600 scale-110" : "ring-1 ring-zinc-200 dark:ring-zinc-700"
                   }`}
                 >
-                  {}
                   <Image
                     src={
                       currentSport === "BASKETBALL"
@@ -264,7 +241,7 @@ export default function MatchFilter() {
                   />
                 </div>
                 <span
-                  className={`text-xs font-medium ${
+                  className={`text-xs font-medium whitespace-nowrap ${
                     currentTeam === "ALL" ? "text-blue-600 font-bold" : "text-zinc-500"
                   }`}
                 >
@@ -276,14 +253,13 @@ export default function MatchFilter() {
                 <button
                   key={team}
                   onClick={() => updateFilter({ team })}
-                  className={`flex flex-col items-center gap-2 p-2 transition-all opacity-80 hover:opacity-100`}
+                  className={`flex flex-col items-center gap-2 p-2 transition-all opacity-80 hover:opacity-100 flex-shrink-0 min-w-[60px]`}
                 >
                   <div
                     className={`w-12 h-12 relative transition-all ${
                       currentTeam === team ? "scale-110 drop-shadow-md" : ""
                     }`}
                   >
-                    {}
                     <Image
                       src={getTeamEmblem(team)}
                       alt={team}
@@ -293,7 +269,7 @@ export default function MatchFilter() {
                     />
                   </div>
                   <span
-                    className={`text-xs font-medium ${
+                    className={`text-xs font-medium whitespace-nowrap ${
                       currentTeam === team ? "text-black dark:text-white font-bold" : "text-zinc-500"
                     }`}
                   >
