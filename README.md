@@ -1,10 +1,45 @@
 # 🏐 SportsMate
 
+<div align="center">
+
+![Build Status](https://img.shields.io/badge/build-passing-2ea44f?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
+
+![Next.js](https://img.shields.io/badge/Next.js-15.0-black?style=flat-square&logo=next.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
+![Socket.IO](https://img.shields.io/badge/Socket.IO-4.7-010101?style=flat-square&logo=socket.dot.io&logoColor=white)
+![TiDB](https://img.shields.io/badge/TiDB-Cloud-4479A1?style=flat-square&logo=mysql&logoColor=white)
+
+</div>
+
 > **배구/농구 직관을 함께! 완벽한 직관 메이트 매칭 플랫폼**
 
 SportsMate는 V-League(배구)와 KBL/WKBL(농구) 팬들을 위한 올인원 직관 동행 플랫폼입니다.
 경기 일정 확인부터 직관 메이트 찾기, 실시간 응원톡, 그리고 나만의 직관 기록까지 —
 모든 직관 경험을 하나의 앱에서 완성하세요!
+
+---
+
+## 📸 주요 기능 미리보기
+
+|                                              메인 홈 1 (Feed)                                              |                                     메인 홈 2 (Schedule)                                      |
+| :--------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------: |
+| ![Home1](public/demo/home_page01.png)<br><sub>오늘의 인기 경기와 실시간 핫한 직관 모임을 한눈에 확인</sub> | ![Home2](public/demo/home_page02.png)<br><sub>종목별/날짜별 경기 일정을 직관적으로 탐색</sub> |
+
+|                                       경기 일정 (Schedule)                                       |                                     직관 동행 찾기 (Rooms)                                     |
+| :----------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------: |
+| ![Schedule](public/demo/schedule_page.png)<br><sub>실시간 점수 확인 및 지난 경기 결과 조회</sub> | ![Rooms](public/demo/rooms_page.png)<br><sub>지역/팀 필터링으로 딱 맞는 직관 메이트 찾기</sub> |
+
+|                                      실시간 채팅 (Chat)                                      |                                    직관 인증 (Cert)                                     |
+| :------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------: |
+| ![Chat](public/demo/chat_page.png)<br><sub>Socket.IO 기반의 실시간 응원 및 시스템 알림</sub> | ![Auth](public/demo/auth_page.png)<br><sub>직관 사진 업로드 및 관리자 승인 시스템</sub> |
+
+|                                  마이페이지 (Profile)                                   |     |
+| :-------------------------------------------------------------------------------------: | :-: |
+| ![Profile](public/demo/my_page.png)<br><sub>나의 직관 승률 분석 및 활동 배지 관리</sub> |     |
+
+> _※ 이미지는 `public/demo` 폴더에 넣어주세요._
 
 ---
 
@@ -76,7 +111,40 @@ SportsMate는 V-League(배구)와 KBL/WKBL(농구) 팬들을 위한 올인원 �
 - **PWA**: @ducanh2912/next-pwa
 - **Image Handling**: Next.js Image Optimization
 - **File Upload**: Multer (서버 측)
-- **Deployment**: Vercel (Frontend), Custom Server (Socket.IO)
+
+### Deployment: Vercel (Frontend), Custom Server (Socket.IO)
+
+---
+
+## 🏗️ 시스템 아키텍처
+
+```mermaid
+graph TD
+    Client[User Client\n(PWA/Mobile/Desktop)]
+
+    subgraph Frontend [Next.js App Router]
+        Page[Pages & UI Components]
+        API[Next.js API Routes]
+        Auth[NextAuth.js]
+    end
+
+    subgraph Backend [Backend Services]
+        Socket[Socket.IO Server\n(Real-time Chat/Alerts)]
+        Cron[Cron Jobs\n(Schedule/Status Updates)]
+    end
+
+    subgraph Database [TiDB Cloud]
+        DB[(MySQL Interface)]
+    end
+
+    Client -->|HTTP/REST| Page
+    Page -->|Fetch API| API
+    Page -->|WebSocket| Socket
+    API -->|Query| DB
+    Socket -->|Query| DB
+    API -.->|Trigger| Socket
+    Auth -->|OAuth| Kakao[Kakao Developers]
+```
 
 ---
 
@@ -173,21 +241,34 @@ sports-mate/
 
 ---
 
-## 🌐 배포
+## 🔥 트러블 슈팅 (Troubleshooting)
 
-### Vercel (권장)
+### 1. TiDB 클라우드 연결 초과 문제 (Too Many Connections)
 
-1. [Vercel](https://vercel.com)에 프로젝트 연결
-2. 환경 변수 설정 (`.env.local` 내용 복사)
-3. 자동 배포 완료!
+- **문제**: 개발 중 빈번하게 `Too many connections` 에러 발생하며 DB 접속 불가.
+- **원인**: Serverless 환경(Next.js)에서 API 요청마다 새로운 DB 연결을 생성하여 TiDB 무료 티어의 연결 제한(50개)을 초과함.
+- **해결**: `mysql2/promise`의 **Connection Pool**을 최적화.
+  - `connectionLimit: 10`으로 제한하여 풀 사이즈 고정.
+  - `maxIdle`, `idleTimeout` 설정을 추가하여 유휴 연결을 적극적으로 해제.
+  - 전역(Global) 변수에 Pool 인스턴스를 캐싱하여 Hot Reload 시에도 연결 재사용 유도.
 
-### Socket.IO 서버
+### 2. Next.js와 Socket.IO의 통합 아키텍처
 
-Socket.IO 서버는 별도로 배포가 필요합니다:
+- **문제**: Next.js (App Router)는 기본적으로 서버리스 함수로 동작하여, 지속적인 연결이 필요한 WebSocket 서버를 내장하기 어려움.
+- **해결**: **Custom Socket Server 분리 전략** 채택.
+  - `src/socket-server.ts`로 별도의 Node.js 프로세스를 실행하여 소켓 통신 전담.
+  - 프론트엔드(Next.js)와 백엔드(Socket Server)가 DB를 공유하며 데이터 일관성 유지.
+  - 배포 시 Vercel(웹) + Render(소켓) 하이브리드 배포 구조 설계.
 
-- **Railway**, **Render**, **DigitalOcean** 등의 Node.js 호스팅 서비스 사용
-- `npm run socket` 명령어로 서버 실행
-- 환경 변수 `SOCKET_SERVER_URL`을 배포된 주소로 업데이트
+---
+
+## 🚀 CI/CD 파이프라인 (Automated Deployment)
+
+### GitHub Actions & Vercel Integration
+
+- **Frontend (Vercel)**: GitHub `main` 브랜치 Push 시 Vercel이 자동으로 감지하여 빌드 및 배포.
+- **Backend (Render)**: Socket.IO Server는 Render 웹 서비스와 연동되어 코드 변경 시 자동 재배포.
+- **Environment Management**: `.env` 환경 변수를 각 플랫폼에서 안전하게 관리하여 보안성 강화.
 
 ---
 
