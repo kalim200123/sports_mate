@@ -191,33 +191,6 @@ Socket.IO 서버는 별도로 배포가 필요합니다:
 
 ---
 
-## 🤝 기여하기
-
-SportsMate는 오픈 소스 프로젝트입니다! 기여를 환영합니다.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📝 라이선스
-
-이 프로젝트는 MIT 라이선스를 따릅니다.
-
----
-
-## 📧 문의
-
-프로젝트에 대한 질문이나 제안이 있으신가요?
-
-- **Email**: your-email@example.com
-- **GitHub Issues**: [이슈 등록하기](https://github.com/your-username/sports-mate/issues)
-
----
-
 <div align="center">
   
 ### 🏐 SportsMate와 함께 즐거운 직관 되세요! 🏀
