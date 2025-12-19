@@ -120,7 +120,7 @@ SportsMate는 V-League(배구)와 KBL/WKBL(농구) 팬들을 위한 올인원 �
 
 ```mermaid
 graph TD
-    Client[User Client\n(PWA/Mobile/Desktop)]
+    Client["User Client\n(PWA/Mobile/Desktop)"]
 
     subgraph Frontend [Next.js App Router]
         Page[Pages & UI Components]
@@ -129,8 +129,8 @@ graph TD
     end
 
     subgraph Backend [Backend Services]
-        Socket[Socket.IO Server\n(Real-time Chat/Alerts)]
-        Cron[Cron Jobs\n(Schedule/Status Updates)]
+        Socket["Socket.IO Server\n(Real-time Chat/Alerts)"]
+        Cron["Cron Jobs\n(Schedule/Status Updates)"]
     end
 
     subgraph Database [TiDB Cloud]
