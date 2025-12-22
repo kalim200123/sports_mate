@@ -76,7 +76,7 @@ io.on("connection", (socket) => {
 
           // 2. If no record, insert
           if (!userStatus) {
-            const initialStatus = isOfficial ? "JOINED" : "PENDING";
+            // const initialStatus = isOfficial ? "JOINED" : "PENDING"; // REMOVED UNUSED
             // ... (Use implicit logic or just separate blocks)
 
             if (isOfficial) {

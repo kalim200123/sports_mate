@@ -227,7 +227,17 @@ export class ScraperService {
 
           // Extract Data: Scan ALL rows
           const matches = await page.evaluate(() => {
-            const results: any[] = [];
+            interface WKBLMatch {
+              month: string;
+              day: string;
+              home: string;
+              away: string;
+              homeScore: number;
+              awayScore: number;
+              stadium: string;
+              time: string;
+            }
+            const results: WKBLMatch[] = [];
             const allRows = Array.from(document.querySelectorAll("tr"));
 
             for (const tr of allRows) {
@@ -398,9 +408,18 @@ export class ScraperService {
             attempts++;
           }
 
-          // Scrape current month
           const scrapedMatches = await page.evaluate(() => {
-            const results: any[] = [];
+            interface KBLMatch {
+              date: string;
+              time: string;
+              home: string;
+              away: string;
+              homeScore: number;
+              awayScore: number;
+              stadium: string;
+              status: string;
+            }
+            const results: KBLMatch[] = [];
             const dayContainers = Array.from(document.querySelectorAll("div[id^='game-']"));
 
             for (const container of dayContainers) {
